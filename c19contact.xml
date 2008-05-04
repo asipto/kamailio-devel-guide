@@ -1,0 +1,14 @@
+<chapter id="c19contact">
+	<title>Contact Details</title>
+	<para>
+		The authors can be contacted via coordinates provided at
+		<ulink url="http://www.asipto.com">www.asipto.com</ulink>.
+	</para>
+	<para>
+		The tutorial is going to be included in the &openser; repository, if
+		you want to post messages with improvements or mistakes you can write emails 
+		to &lt;<emphasis role="strong">devel [at] lists [dot] openser [dot] org</emphasis>&gt;
+		or use the documentation tracker from
+		<ulink url="http://sourceforge.net/tracker/?atid=782960&amp;group_id=139143">sourceforge.net</ulink>.
+	</para>
+</chapter>

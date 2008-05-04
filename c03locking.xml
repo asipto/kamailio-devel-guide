@@ -1,0 +1,628 @@
+<chapter id="c03locks">
+	<title>Locking system</title>
+	<para>
+		&openser; provides a custom locking system which has a simple interface for development.
+		Its root element is a mutex semaphore, that can be set (locked) or unset (unlocked). The rest
+		of synchronization mechanisms available in SysV and POSIX not being needed.
+	</para>
+	<para>
+		The locks can be used as simple variables or lock sets (array of simple locks). To improve
+		the speed, behind the locks is, by default, machine-specific code. If the architecture of the
+		machine is unknown, &openser; will use SysV semaphores.
+	</para>
+	<section id="c03asml">
+		<title>Simple Locks API</title>
+		<para>
+			Basically, to create a lock, you have to define a variable of type
+			<emphasis role="strong">gen_lock_t</emphasis>, allocate it in shared memory and initialize it.
+			Then you can perform set/unset operations, destroying the variable when you finish using it.
+		</para>
+		<para>
+			To use the locking system in your C code you have to include the headers file:
+			<emphasis role="strong">locking.h</emphasis>.
+		</para>
+		<para>
+			Data types and available functions to do operations with locks are described in the next
+			sections.
+		</para>
+		<section id="c03glock">
+			<title>gen_lock_t</title>
+			<para>
+				It is the type to define a lock variable. It must be allocated in shared memory, to be
+				available across &openser; processes.
+			</para>
+			<example id="c03ex_gen_lock_t">
+				<title>Defining a lock</title>
+<programlisting format="linespecific">
+...
+#include "locking.h"
+
+gen_lock_t lock;
+...
+				</programlisting>
+			</example>
+		</section>
+
+		<section id="c03lock_alloc">
+			<title>lock_alloc(...)</title>
+			<para>
+				Allocates a lock in shared memory. If your <emphasis role="strong">gen_lock_t</emphasis>
+				is not part of a structure allocated in share memory, you have to use this function to
+				properly create the lock.
+			</para>
+			<example id="c03p_lock_alloc">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+gen_lock_t* lock_alloc();
+...
+				</programlisting>
+			</example>
+			<para>
+				It returns the pointer to share memory structure.
+			</para>
+			<example id="c03ex_lock_alloc">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_t *lock;
+lock = lock_alloc();
+if(lock==NULL)
+{
+	LM_ERR("cannot allocate the lock\n");
+	exit;
+}
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_dealloc">
+			<title>lock_dealloc(...)</title>
+			<para>
+				Free the shared memory allocated for lock.
+			</para>
+			<example id="c03p_lock_dealloc">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void lock_dealloc(gen_lock_t* lock);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter is a variable returned by <emphasis role="strong">lock_alloc(...)</emphasis>.
+			</para>
+			<example id="c03ex_lock_dealloc">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_t *lock;
+lock = lock_alloc();
+if(lock==NULL)
+{
+	LM_ERR("cannot allocate the lock\n");
+	exit;
+}
+/* make use of lock */
+...
+lock_dealloc(lock);
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_init">
+			<title>lock_init(...)</title>
+			<para>
+				Initialize the lock. You must call this function before fist set operation on the lock.
+			</para>
+			<example id="c03p_lock_init">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+gen_lock_t* lock_init(gen_lock_t* lock);
+...
+				</programlisting>
+			</example>
+			<para>
+				It returns the parameter if there is no error, <emphasis role="strong">NULL</emphasis>
+				if error occurred.
+			</para>
+			<example id="c03ex_lock_init">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_t *lock;
+lock = lock_alloc();
+if(lock==NULL)
+{
+	LM_ERR("cannot allocate the lock\n");
+	exit;
+}
+if(lock_init(lock)==NULL)
+{
+	LM_ERR("cannot init the lock\n");
+	lock_dealloc(lock);
+	exit;
+}
+/* make use of lock */
+...
+lock_dealloc(lock);
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_destroy">
+			<title>lock_destroy(...)</title>
+			<para>
+				Destroy internal attributes of <emphasis role="strong">gen_lock_t</emphasis>. You must
+				call it before deallocating a lock to ensure proper clean up (if SysV is used, it calls
+				the functions to remove the semaphores).
+			</para>
+			<example id="c03p_lock_destroy">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void lock_destroy(gen_lock_t* lock);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter is a lock initialized with <emphasis role="strong">lock_init(...)</emphasis>.
+			</para>
+			<example id="c03ex_lock_destroy">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_t *lock;
+lock = lock_alloc();
+if(lock==NULL)
+{
+	LM_ERR("cannot allocate the lock\n");
+	exit;
+}
+if(lock_init(lock)==NULL)
+{
+	LM_ERR("cannot init the lock\n");
+	lock_dealloc(lock);
+	exit;
+}
+/* make use of lock */
+...
+lock_destroy(lock);
+lock_dealloc(lock);
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_get">
+			<title>lock_get(...)</title>
+			<para>
+				Perform set operation on a lock. If the lock is already set, the function waits until
+				the lock is unset.
+			</para>
+			<example id="c03p_lock_get">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void lock_get(gen_lock_t* lock);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter must be initialized with <emphasis role="strong">lock_init(...)</emphasis>
+				before calling this function.
+			</para>
+			<example id="c03ex_lock_get">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_t *lock;
+lock = lock_alloc();
+if(lock==NULL)
+{
+	LM_ERR("cannot allocate the lock\n");
+	exit;
+}
+if(lock_init(lock)==NULL)
+{
+	LM_ERR("cannot init the lock\n");
+	lock_dealloc(lock);
+	exit;
+}
+/* make use of lock */
+lock_get(lock);
+/* under lock protection */
+...
+lock_destroy(lock);
+lock_dealloc(lock);
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_release">
+			<title>lock_release(...)</title>
+			<para>
+				Perform unset operation on a lock. If the lock is set, it will unblock it. You
+				should call it after <emphasis role="strong">lock_set(...)</emphasis>, after finishing
+				the operations that need synchronization and racing protection.
+			</para>
+			<example id="c03p_lock_release">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void lock_release(gen_lock_t* lock);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter must be initialized before calling this function.
+			</para>
+			<example id="c03ex_lock_release">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_t *lock;
+lock = lock_alloc();
+if(lock==NULL)
+{
+	LM_ERR("cannot allocate the lock\n");
+	exit;
+}
+if(lock_init(lock)==NULL)
+{
+	LM_ERR("cannot init the lock\n");
+	lock_dealloc(lock);
+	exit;
+}
+/* make use of lock */
+lock_get(lock);
+/* under lock protection */
+...
+lock_release(lock);
+...
+lock_destroy(lock);
+lock_dealloc(lock);
+...
+				</programlisting>
+			</example>
+		</section>
+	</section>
+
+	<section id="c03astl">
+		<title>Lock Set API</title>
+		<para>
+			The lock set is an array of <emphasis role="strong">gen_lock_t</emphasis>. To create a
+			lock set, you have to define a variable of type
+			<emphasis role="strong">gen_lock_set_t</emphasis>, allocate it in shared memory specifying the
+			number of locks in the set, then initialize it. You can perform set/unset operations,
+			providing the lock set variable and destroying the variable when you finish using it.
+		</para>
+		<para>
+			To use the lock sets in your C code you have to include the headers file:
+			<emphasis role="strong">locking.h</emphasis>.
+		</para>
+		<para>
+			Data types and available functions to do operations with lock sets are described in the next
+			sections.
+		</para>
+		<section id="c03gen_lock_set_t">
+			<title>gen_lock_set_t</title>
+			<para>
+				It is the type to define a lock set variable. It must be allocated in shared memory, to be
+				available across &openser; processes.
+			</para>
+			<example id="c03ex_gen_lock_set_t">
+				<title>Defining a lock</title>
+<programlisting format="linespecific">
+...
+#include "locking.h"
+
+gen_lock_set_t lock_set;
+...
+				</programlisting>
+			</example>
+		</section>
+
+		<section id="c03lock_set_alloc">
+			<title>lock_set_alloc(...)</title>
+			<para>
+				Allocates a lock set in shared memory.
+			</para>
+			<example id="c03p_lock_set_alloc">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+gen_lock_set_t* lock_set_alloc(int n);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter <emphasis role="strong">n</emphasis> specifies the number
+				of locks in the set. Return pointer to the lock set, or NULL if the set couldn't
+				be allocated.
+			</para>
+			<example id="c03ex_lock_set_alloc">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_set_t *set;
+set = lock_set_alloc(16);
+if(set==NULL)
+{
+	LM_ERR("cannot allocate the lock set\n");
+	exit;
+}
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_set_dealloc">
+			<title>lock_set_dealloc(...)</title>
+			<para>
+				Free the memory allocated for a lock set.
+			</para>
+			<example id="c03p_lock_set_dealloc">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void lock_set_dealloc(gen_lock_set_t* set);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter has to be a lock set allocated with
+				<emphasis role="strong">lock_set_alloc(...)</emphasis>.
+			</para>
+			<example id="c03ex_lock_set_dealloc">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_set_t *set;
+set = lock_set_alloc(16);
+if(set==NULL)
+{
+	LM_ERR("cannot allocate the lock set\n");
+	exit;
+}
+...
+lock_set_dealloc(set);
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_set_init">
+			<title>lock_set_init(...)</title>
+			<para>
+				Initialized the internal attributes of a lock set. The lock set has to be allocated
+				with <emphasis role="strong">lock_set_alloc(...)</emphasis>. This function must be
+				called before performing any set/unset operation on lock set.
+			</para>
+			<example id="c03p_lock_set_init">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+gen_lock_set_t* lock_set_init(gen_lock_set_t* set);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter is an allocated lock set. It returns NULL if the lock set couldn't be
+				initialized, otherwise returns the pointer to the lock set.
+			</para>
+			<example id="c03ex_lock_set_init">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_set_t *set;
+set = lock_set_alloc(16);
+if(set==NULL)
+{
+	LM_ERR("cannot allocate the lock set\n");
+	exit;
+}
+if(lock_set_init(set)==NULL)
+{
+	LM_ERR("cannot initialize the lock set'n");
+	lock_set_dealloc(set);
+	exit;
+}
+/* make usage of lock set */
+...
+lock_set_dealloc(set);
+
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_set_destroy">
+			<title>lock_set_destroy(...)</title>
+			<para>
+				Destroy the internal structure of the lock set. You have to call it once
+				you finished to use the lock set. The function must be called after
+				<emphasis role="strong">lock_set_init(...)</emphasis>
+			</para>
+			<example id="c03p_lock_set_destroy">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void lock_set_destroy(gen_lock_set_t* set);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter is an initialized lock set. After calling this function you should not
+				perform anymore set/unset operations on lock set.
+			</para>
+			<example id="c03ex_lock_set_destroy">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_set_t *set;
+set = lock_set_alloc(16);
+if(set==NULL)
+{
+	LM_ERR("cannot allocate the lock set\n");
+	exit;
+}
+if(lock_set_init(set)==NULL)
+{
+	LM_ERR("cannot initialize the lock set'n");
+	lock_set_dealloc(set);
+	exit;
+}
+/* make usage of lock set */
+...
+lock_set_destroy(set);
+lock_set_dealloc(set);
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_set_get">
+			<title>lock_set_get(...)</title>
+			<para>
+				Set (block) a lock in the lock set. You should call this function after the lock set
+				has been initialized. If the lock is already set, the function waits until that lock is
+				unset (unblocked).
+			</para>
+			<example id="c03p_lock_set_get">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void lock_set_get(gen_lock_set_t* set, int i);
+...
+				</programlisting>
+			</example>
+			<para>
+				First parameter is the lock set. The second is the index withing the set of the lock to
+				be set. First lock in set has index 0. The index parameter must be between
+				<emphasis role="strong">0</emphasis> and <emphasis role="strong">n-1</emphasis> (see
+				<emphasis role="strong">lock_set_alloc(...)</emphasis>.
+			</para>
+			<example id="c03ex_lock_set_get">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_set_t *set;
+set = lock_set_alloc(16);
+if(set==NULL)
+{
+	LM_ERR("cannot allocate the lock set\n");
+	exit;
+}
+if(lock_set_init(set)==NULL)
+{
+	LM_ERR("cannot initialize the lock set'n");
+	lock_set_dealloc(set);
+	exit;
+}
+/* make usage of lock set */
+lock_set_get(set, 8);
+/* under lock protection */
+...
+lock_set_destroy(set);
+lock_set_dealloc(set);
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c03lock_set_release">
+			<title>lock_set_release(...)</title>
+			<para>
+				Unset (unblock) a lock in the lock set.
+			</para>
+			<example id="c03p_lock_set_release">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void lock_set_release(gen_lock_set_t* set, int i);
+...
+				</programlisting>
+			</example>
+			<para>
+				First parameter is the lock set. The second is the index withing the set of the lock to
+				be unset. First lock in set has index 0. The index parameter must be between
+				<emphasis role="strong">0</emphasis> and <emphasis role="strong">n-1</emphasis> (see
+				<emphasis role="strong">lock_set_alloc(...)</emphasis>.
+			</para>
+			<example id="c03ex_lock_set_release">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_set_t *set;
+set = lock_set_alloc(16);
+if(set==NULL)
+{
+	LM_ERR("cannot allocate the lock set\n");
+	exit;
+}
+if(lock_set_init(set)==NULL)
+{
+	LM_ERR("cannot initialize the lock set'n");
+	lock_set_dealloc(set);
+	exit;
+}
+/* make usage of lock set */
+lock_set_get(set, 8);
+/* under lock protection */
+...
+lock_set_release(set, 8);
+...
+lock_set_destroy(set);
+lock_set_dealloc(set);
+...
+				</programlisting>
+			</example>
+		</section>
+	</section>
+	<section id="c03troubleshooting">
+		<title>Troubleshooting</title>
+		<para>
+			A clear sign of issues with the locking is that one or more &openser; processes eat lot of CPU.
+			If the traffic load does not justify such behavior and no more SIP messages are processed, the only
+			solution is to troubleshoot and fix the locking error. The problem is that a lock is set but never
+			unset. A typical case is when returning due to an error and forgetting to release a previously lock
+			set.
+		</para>
+		<para>
+			To troubleshoot a solution is to use <emphasis role="strong">gdb</emphasis>, attach to the process
+			that eats lot of CPU and get the backtrace. You need to get the PID of that &openser; process -
+			<emphasis role="strong">top</emphasis> or <emphasis role="strong">ps</emphasis> tools can be used.
+		</para>
+		<programlisting  format="linespecific">
+...
+# gdb /path/to/openser PID
+...
+		</programlisting>
+		<para>
+			From the backtrace you should get to the lock that is set and not released. From there you should
+			start the investigation - what are the cases to set that lock and in which circumstances it does not
+			get unset.
+		</para>
+	</section>
+
+</chapter>

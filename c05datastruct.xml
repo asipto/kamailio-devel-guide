@@ -1,0 +1,455 @@
+<chapter id="c05datastruct">
+	<title>Data structures</title>
+	<para>
+		In this chapter we focus on most used data structures inside
+		&openser; sources. Most of them relate to SIP message structure.
+		Other important data structures are explained in the chapters
+		detailing specific components or functionalities -- for example,
+		see <emphasis role="strong">Database API</emphasis> or
+		<emphasis role="strong">Pseudo-variables</emphasis> chapters.
+	</para>
+	<section id="c05str">
+		<title>str</title>
+		<para>
+			&sip; is a text-based protocol, therefore lot of operations
+			resume to text manipulation. &openser; uses references in the
+			&sip; message body most of the time, doing it via an anchor
+			pointer and the length. For that it uses the
+			<emphasis role="strong">str</emphasis> structure.
+		</para>
+		<para>
+			The <emphasis role="strong">str</emphasis> structure is defined
+			in file <emphasis role="strong">str.h</emphasis>.
+		</para>
+		<example id="c05d_str">
+			<title>Definition</title>
+<programlisting  format="linespecific">
+...
+struct _str{
+	char* s; /* pointer to the beginning of string (char array) */
+	int len; /* string length */
+};
+
+typedef struct _str str;
+...
+			</programlisting>
+		</example>
+		<example id="c05ex_str">
+			<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "str.h"
+...
+str s;
+s.s = "openser";
+s.len = strlen(s.len);
+LM_DBG("the string is [%.*s]\n", s.len, s.s);
+...
+			</programlisting>
+		</example>
+	</section>
+	<section id="c05struct_sip_uri">
+		<title>struct sip_uri</title>
+		<para>
+			This is the structure holding a parsed SIP URI. You can fill it
+			by calling <emphasis role="strong">parse_uri(...)</emphasis> function.
+		</para>
+		<para>
+			The structure is defined in file <emphasis role="strong">parser/msg_parser.h</emphasis>.
+		</para>
+		<example id="c05d_struct_sip_uri">
+			<title>Definition</title>
+<programlisting  format="linespecific">
+...	
+struct sip_uri {
+	str user;     /* Username */
+	str passwd;   /* Password */
+	str host;     /* Host name */
+	str port;     /* Port number */
+	str params;   /* URI Parameters */
+	str headers;  /* URI Headers */
+	unsigned short port_no; /* Port number r*/
+	unsigned short proto; /* Transport protocol */
+	uri_type type; /* URI scheme */
+	/* parameters */
+	str transport;   /* transport parameter */
+	str ttl;         /* ttl parameter */
+	str user_param;  /* user parameter */
+	str maddr;       /* maddr parameter */
+	str method;      /* method parameter */
+	str lr;          /* lr parameter */
+	str r2;          /* specific rr parameter */
+	/* values */
+	str transport_val;  /* value of transport parameter */
+	str ttl_val;        /* value of ttl parameter */
+	str user_param_val; /* value of user parameter */
+	str maddr_val;      /* value of maddr parameter */
+	str method_val;     /* value of method parameter */
+	str lr_val;         /* value of lr parameter */
+	str r2_val;         /* value of r2 parameter */
+};
+...
+			</programlisting>
+		</example>
+		<para>
+			Members of the structure corresponds to a part of a SIP URI. To get details about
+			the format of SIP URI read <emphasis role="strong">RFC3261</emphasis>. Example of SIP URI:
+		</para>
+		<para>
+			<emphasis role="strong">sip:alice@sipserver.org:5060;transport=tcp</emphasis>
+		</para>
+	</section>
+	<section id="c05struct_sip_msg">
+		<title>struct sip_msg</title>
+		<para>
+			This is the main structure related to a SIP message. When a SIP message is received from
+			the network, it is parsed in such structure. The pointer to this structure is given as
+			parameter to all functions exported by modules to be used in the configuration file.
+		</para>
+		<para>
+			The structure is defined in file <emphasis role="strong">parser/msg_parser.h</emphasis>.
+		</para>
+		<example id="c05d_struct_sip_msg">
+			<title>Definition</title>
+<programlisting  format="linespecific">
+...
+struct sip_msg {
+	unsigned int id;               /* message id, unique/process*/
+	struct msg_start first_line;   /* Message first line */
+	struct via_body* via1;         /* The first via */
+	struct via_body* via2;         /* The second via */
+	struct hdr_field* headers;     /* All the parsed headers*/
+	struct hdr_field* last_header; /* Pointer to the last parsed header*/
+	hdr_flags_t parsed_flag;       /* Already parsed header field types */
+
+	/* Via, To, CSeq, Call-Id, From, end of header*/
+	/* pointers to the first occurrences of these headers;
+	 * everything is also saved in 'headers' (see above)
+	 */
+
+	/* shorcuts to known headers */
+	struct hdr_field* h_via1;
+	struct hdr_field* h_via2;
+	struct hdr_field* callid;
+	struct hdr_field* to;
+	struct hdr_field* cseq;
+	struct hdr_field* from;
+	struct hdr_field* contact;
+	struct hdr_field* maxforwards;
+	struct hdr_field* route;
+	struct hdr_field* record_route;
+	struct hdr_field* path;
+	struct hdr_field* content_type;
+	struct hdr_field* content_length;
+	struct hdr_field* authorization;
+	struct hdr_field* expires;
+	struct hdr_field* proxy_auth;
+	struct hdr_field* supported;
+	struct hdr_field* proxy_require;
+	struct hdr_field* unsupported;
+	struct hdr_field* allow;
+	struct hdr_field* event;
+	struct hdr_field* accept;
+	struct hdr_field* accept_language;
+	struct hdr_field* organization;
+	struct hdr_field* priority;
+	struct hdr_field* subject;
+	struct hdr_field* user_agent;
+	struct hdr_field* content_disposition;
+	struct hdr_field* accept_disposition;
+	struct hdr_field* diversion;
+	struct hdr_field* rpid;
+	struct hdr_field* refer_to;
+	struct hdr_field* session_expires;
+	struct hdr_field* min_se;
+	struct hdr_field* ppi;
+	struct hdr_field* pai;
+	struct hdr_field* privacy;
+
+	struct sdp_info* sdp; /* parsed SDP body */
+
+	char* eoh;        /* pointer to the end of header (if found) or null */
+	char* unparsed;   /* here we stopped parsing*/
+	
+	struct receive_info rcv; /* source and dest ip, ports, proto a.s.o*/
+
+	char* buf;        /* scratch pad, holds a unmodified message,
+                           *  via, etc. point into it */
+	unsigned int len; /* message len (orig) */
+
+	/* modifications */
+
+	str new_uri; /* changed first line uri, when you change this
+                  * don't forget to set parsed_uri_ok to 0 */
+
+	str dst_uri; /* Destination URI, must be forwarded to this URI if len!=0 */
+	
+	/* current uri */
+	int parsed_uri_ok; /* 1 if parsed_uri is valid, 0 if not, set it to 0
+	                      if you modify the uri (e.g change new_uri)*/
+	struct sip_uri parsed_uri; /* speed-up > keep here the parsed uri*/
+
+	/* the same for original uri */
+	int parsed_orig_ruri_ok;
+	struct sip_uri parsed_orig_ruri;
+
+	struct lump* add_rm;       /* used for all the forwarded requests/replies */
+	struct lump* body_lumps;     /* Lumps that update Content-Length */
+	struct lump_rpl *reply_lump; /* only for localy generated replies !!!*/
+
+	/* whatever whoever want to append to branch comes here */
+	char add_to_branch_s[MAX_BRANCH_PARAM_LEN];
+	int add_to_branch_len;
+	
+	/* index to TM hash table; stored in core to avoid 
+	 * unnecessary calculations */
+	unsigned int  hash_index;
+
+	/* flags used from script */
+	flag_t flags;
+
+	/* flags used by core - allows to set various flags on the message; may 
+	 * be used for simple inter-module communication or remembering 
+	 * processing state reached */
+	unsigned int msg_flags;
+
+	str set_global_address;
+	str set_global_port;
+
+	/* force sending on this socket */
+	struct socket_info* force_send_socket;
+
+	/* create a route HF out of this path vector */
+	str path_vec;
+};
+...
+			</programlisting>
+		</example>
+		<para>
+			To fill such structure you can use function <emphasis role="strong">parse_msg(...)</emphasis>
+			giving a buffer containing raw text of a SIP message. Most of the attributes in this structure
+			point directly inside the SIP message buffer.
+		</para>
+		<para>
+			Example of a SIP message:
+		</para>
+<programlisting  format="linespecific">
+...
+REGISTER sip:sip.test.com SIP/2.0
+Via: SIP/2.0/UDP 192.168.1.3:5061;branch=z9hG4bK-d663b80b
+Max-Forwards: 70
+From: user &lt;sip:u123@sip.test.com&gt;;tag=ea8cef4b108a99bco1
+To: user &lt;sip:u123@sip.test.com&gt;
+Call-ID: b96fead3-f03493d4@xyz
+CSeq: 3720 REGISTER
+Contact: user &lt;sip:u123@192.168.1.3:5061&gt;;expires=3600
+User-Agent: Linksys/RT31P2-2.0.10(LIc)
+Content-Length: 0
+Allow: ACK, BYE, CANCEL, INFO, INVITE, NOTIFY, OPTIONS, REFER
+Supported: x-sipura
+...
+		</programlisting>
+	</section>
+	<section id="c05struct_msg_start">
+		<title>struct msg_start</title>
+		<para>
+			The structure corresponds to a parsed representation of the first line in a SIP message.
+			It is defined in file <emphasis role="strong">parser/parse_fline.h</emphasis>.
+		</para>
+		<example id="c05d_struct_msg_start">
+			<title>Definition</title>
+<programlisting  format="linespecific">
+...
+struct msg_start {
+	int type;                 /* Type of the Message - Request or Response (Reply) */
+	int len;                  /* length including delimiter */
+	union {
+		struct {
+			str method;       /* Method string */
+			str uri;          /* Request URI as raw string */
+			str version;      /* SIP version */
+			int method_value; /* Internal integer representation of SIP method */
+		} request;
+		struct {
+			str version;      /* SIP version */
+			str status;       /* Reply status */
+			str reason;       /* Reply reason phrase */
+			unsigned int statuscode; /* Integer representation of reply status */
+		} reply;
+	}u;
+};
+...
+			</programlisting>
+		</example>
+		<para>
+			To parse a buffer containing the first line of a SIP message you have to use
+			the function <emphasis role="strong">parse_fline(...)</emphasis>.
+		</para>
+	</section>
+	<section id="c05struct_hdr_field">
+		<title>struct hdr_field</title>
+		<para>
+			The structure holding a parsed SIP header. It is defined in file
+			<emphasis role="strong">parser/hf.h</emphasis>.
+		</para>
+		<example id="c05d_struct_hdr_field">
+			<title>Definition</title>
+<programlisting  format="linespecific">
+...
+struct hdr_field {
+	hdr_types_t type;          /* Header field type */
+	str name;                  /* Header field name */
+	str body;                  /* Header field body (may not include CRLF) */
+	int len;                   /* length from hdr start until EoHF (incl.CRLF) */
+	void* parsed;              /* Parsed data structures */
+	struct hdr_field* next;    /* Next header field in the list */
+	struct hdr_field* sibling; /* Next header of same type */
+};
+...
+			</programlisting>
+		</example>
+		<para>
+			To parse specific headers in a SIP message you have to use the function
+			<emphasis role="strong">parse_headers(...)</emphasis>. The function takes as parameter
+			a bitmask flag that can specify what headers you need to be parsed. For example, to parse
+			the From and To headers:
+		</para>
+		<para>
+			<emphasis role="strong">parse_headers(msg, HDR_FROM_F|HDR_TO_F, 0);</emphasis>
+		</para>
+		<para>
+			To optimize the operations with headers, an integer value is assigned to most used headers.
+			This value is stored in attribute <emphasis role="strong">type</emphasis>. Here is the list
+			with the values for header type:
+		</para>
+<programlisting  format="linespecific">
+...
+enum _hdr_types_t {
+	HDR_ERROR_T        = -1   /* Error while parsing */,
+	HDR_OTHER_T        =  0   /* Some other header field */,
+	HDR_VIA_T          =  1   /* Via header field */,
+	HDR_VIA1_T         =  1   /* First Via header field */,
+	HDR_VIA2_T         =  2   /* only used as flag */,
+	HDR_TO_T                  /* To header field */,
+	HDR_FROM_T                /* From header field */,
+	HDR_CSEQ_T                /* CSeq header field */,
+	HDR_CALLID_T              /* Call-Id header field */,
+	HDR_CONTACT_T             /* Contact header field */,
+	HDR_MAXFORWARDS_T         /* MaxForwards header field */,
+	HDR_ROUTE_T               /* Route header field */,
+	HDR_RECORDROUTE_T         /* Record-Route header field */,
+	HDR_PATH_T                /* Path header fiels */,
+	HDR_CONTENTTYPE_T         /* Content-Type header field */,
+	HDR_CONTENTLENGTH_T       /* Content-Length header field */,
+	HDR_AUTHORIZATION_T       /* Authorization header field */,
+	HDR_EXPIRES_T             /* Expires header field */,
+	HDR_PROXYAUTH_T           /* Proxy-Authorization hdr field */,
+	HDR_SUPPORTED_T           /* Supported  header field */,
+	HDR_PROXYREQUIRE_T        /* Proxy-Require header field */,
+	HDR_UNSUPPORTED_T         /* Unsupported header field */,
+	HDR_ALLOW_T               /* Allow header field */,
+	HDR_EVENT_T               /* Event header field */,
+	HDR_ACCEPT_T              /* Accept header field */,
+	HDR_ACCEPTLANGUAGE_T      /* Accept-Language header field */,
+	HDR_ORGANIZATION_T        /* Organization header field */,
+	HDR_PRIORITY_T            /* Priority header field */,
+	HDR_SUBJECT_T             /* Subject header field */,
+	HDR_USERAGENT_T           /* User-Agent header field */,
+	HDR_ACCEPTDISPOSITION_T   /* Accept-Disposition hdr field */,
+	HDR_CONTENTDISPOSITION_T  /* Content-Disposition hdr field */,
+	HDR_DIVERSION_T           /* Diversion header field */,
+	HDR_RPID_T                /* Remote-Party-ID header field */,
+	HDR_REFER_TO_T            /* Refer-To header fiels */,
+	HDR_SESSION_EXPIRES_T     /* Session-Expires header field */,
+	HDR_MIN_SE_T              /* Min-SE header field */,
+	HDR_PPI_T                 /* P-Preferred-Identity header field */,
+	HDR_PAI_T                 /* P-Asserted-Identity header field */,
+	HDR_PRIVACY_T             /* Privacy header field */,
+	HDR_RETRY_AFTER_T         /* Retry-After header field */,
+	HDR_EOH_T                 /* Some other header field */
+};
+...
+		</programlisting>
+		<para>
+			If the type of hdr_field structure is <emphasis role="strong">HDR_TO_T</emphasis> it is
+			the parsed <emphasis role="strong">To</emphasis> header.
+		</para>
+		<para>
+			The attribute <emphasis role="strong">parsed</emphasis> may hold the parsed representation
+			of the header body. For example, for <emphasis role="strong">Content-Lenght</emphasis>
+			header it contains the content length value as integer.
+		</para>
+	</section>
+	<section id="c05struct_to_body">
+		<title>struct to_body</title>
+		<para>
+			The structure holds a parsed To header. Same structure is used for From header and the other
+			headers that have same structure conform to IETF RFCs. The structure is defined in file
+			<emphasis role="strong">parser/parse_to.h</emphasis>.
+		</para>
+		<example id="c05d_struct_to_body">
+			<title>Definition</title>
+			<programlisting  format="linespecific">
+...
+struct to_body{
+	int error;                    /* Error code */
+	str body;                     /* The whole header field body */
+	str uri;                      /* URI withing the body of the header */
+	str display;                  /* Display Name */
+	str tag_value;                /* Value of tag parameter*/
+	struct sip_uri parsed_uri;    /* Parsed URI */
+	struct to_param *param_lst;   /* Linked list of parameters */
+	struct to_param *last_param;  /* Last parameter in the list */
+};
+...
+			</programlisting>
+		</example>
+		<para>
+			To parse a To header you have to use function <emphasis role="strong">parse_to(...)</emphasis>.
+		</para>
+	</section>
+	<section id="c05struct_via_body">
+		<title>struct via_body</title>
+		<para>
+			The structure holds a parsed Via header. It is defined in file
+			<emphasis role="strong">parse_via.h</emphasis>.
+		</para>
+		<example id="c05d_struct_via_body">
+			<title>Definition</title>
+			<programlisting  format="linespecific">
+...
+struct via_body { 
+	int error;          /* set if an error occurred during parsing */
+	str hdr;        /* header name "Via" or "v" */
+	str name;       /* protocol name */
+	str version;    /* protocol version */
+	str transport;  /* transport protocol */
+	str host;       /* host part of Via header */
+	unsigned short proto; /* transport protocol as integer*/
+	unsigned short port;  /* port number as integer */
+	str port_str;         /* port number as string*/
+	str params;           /* parameters */
+	str comment;          /* comment */
+	unsigned int bsize;           /* body size, not including hdr */
+	struct via_param* param_lst;  /* list of parameters*/
+	struct via_param* last_param; /*last via parameter, internal use*/
+
+	/* shortcuts to "important" params*/
+	struct via_param* branch;     /* branch parameter */
+	str tid;                      /* transaction id, part of branch */
+	struct via_param* received;   /* received parameter */
+	struct via_param* rport;      /* rport parameter */
+	struct via_param* i;          /* i parameter */
+	struct via_param* alias;      /* alias see draft-ietf-sip-connect-reuse-00 */
+	struct via_param* maddr;      /* maddr parameter */
+	struct via_body* next;        /* pointer to next via body string if compact Via or null */
+};
+...
+			</programlisting>
+		</example>
+		<para>
+			The str attributes in the structure are referenced to SIP message buffer. To parse a Via
+			header you have to use the function <emphasis role="strong">parse_via(...)</emphasis>.
+		</para>
+	</section>
+</chapter>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding='ISO-8859-1'?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+<!ENTITY % bookentities SYSTEM "bookentities.xml">
+%bookentities;
+
+<!ENTITY c01intro SYSTEM "c01intro.xml">
+<!ENTITY c02architecture SYSTEM "c02architecture.xml">
+<!ENTITY c03locking SYSTEM "c03locking.xml">
+<!ENTITY c04memory SYSTEM "c04memory.xml">
+<!ENTITY c05datastruct SYSTEM "c05datastruct.xml">
+<!ENTITY c06sipparser SYSTEM "c06sipparser.xml">
+<!ENTITY c07transport SYSTEM "c07transport.xml">
+<!ENTITY c08config SYSTEM "c08config.xml">
+<!ENTITY c09database SYSTEM "c09database.xml">
+<!ENTITY c10mi SYSTEM "c10mi.xml">
+<!ENTITY c11pv SYSTEM "c11pv.xml">
+<!ENTITY c12transformations SYSTEM "c12transformations.xml">
+<!ENTITY c13statistics SYSTEM "c13statistics.xml">
+<!ENTITY c14datalump SYSTEM "c14datalump.xml">
+<!ENTITY c15timer SYSTEM "c15timer.xml">
+<!ENTITY c16moduledev SYSTEM "c16moduledev.xml">
+<!ENTITY c17licensing SYSTEM "c17licensing.xml">
+<!ENTITY c18references SYSTEM "c18references.xml">
+<!ENTITY c19contact SYSTEM "c19contact.xml">
+
+]>
+
+<book>
+    <bookinfo>
+	<title>OPENSER Devel Guide</title>
+	<titleabbrev>OPENSER Devel Guide</titleabbrev>
+	<abstract>
+		<para>
+			This book documents the internal architecture of OPENSER SIP
+			Server, providing the details useful to develop extensions in the
+			core or as a module.
+		</para>
+		<para>
+			The focus will be on major components of the SIP server, such as
+			memory manager, locking system, parser, database API,
+			configuration file, MI commands, pseudo-variables
+			and module interface.
+		</para>
+		<para>
+			Examples, API and the architecture are based on current development
+			version of &openser; - <emphasis role="strong">1.4.0</emphasis> -
+			at April 2, 2008. Some may change until 1.4.0 is released as
+			stable. The document will be timely updated accordingly, check for
+			updates at
+			<ulink url="http://www.asipto.com">www.asipto.com</ulink> or
+			<ulink url="http://www.openser.org">www.openser.org</ulink>.
+		</para>
+		<para>
+			This document is free to use for anybody. The authors are not
+			liable in any way for the consequences you may get due to usage
+			of this document.
+		</para>
+		<para role="pagebreak"/>
+	</abstract>
+
+	<authorgroup>
+	    <author>
+		<firstname>Daniel-Constantin</firstname>
+		<surname>Mierla</surname>
+		<email><ulink url="http://www.asipto.com">http://www.asipto.com</ulink></email>
+		<address>
+			<affiliation>
+			<orgname>ASIPTO SRL</orgname>
+			</affiliation>
+			<otheraddr>
+			<ulink url="http://www.asipto.com">http://www.asipto.com</ulink>
+			</otheraddr>
+		</address>
+	    </author>
+	    <author>
+		<firstname>Elena-Ramona</firstname>
+		<surname>Modroiu</surname>
+		<email><ulink url="http://www.asipto.com">http://www.asipto.com</ulink></email>
+		<address>
+			<affiliation>
+			<orgname>ASIPTO SRL</orgname>
+			</affiliation>
+			<otheraddr>
+			<ulink url="http://www.asipto.com">http://www.asipto.com</ulink>
+			</otheraddr>
+		</address>
+	    </author>
+	</authorgroup>
+	<copyright>
+	    <year>2008</year>
+		<holder><ulink url="http://www.asipto.com">ASIPTO SRL</ulink></holder>
+	</copyright>
+    </bookinfo>
+    <toc></toc>
+	
+    &c01intro;
+    &c02architecture;
+    &c03locking;
+    &c04memory;
+	&c05datastruct;
+	&c06sipparser;
+	&c07transport;
+	&c08config;
+	&c09database;
+	&c10mi;
+	&c11pv;
+	&c12transformations;
+	&c13statistics;
+	&c14datalump;
+	&c15timer;
+	&c16moduledev;
+	&c17licensing;
+	&c18references;
+	&c19contact;
+
+</book>

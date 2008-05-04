@@ -1,0 +1,297 @@
+<chapter id="c08config">
+	<title>Extending configuration file</title>
+	<para>
+		<emphasis role="strong"><ulink url="http://flex.sourceforge.net/">flex</ulink></emphasis> and
+		<emphasis role="strong"><ulink url="http://www.gnu.org/software/bison/">bison</ulink></emphasis>
+		are used to parse the configuration file and build the actions tree that are executed at run
+		time for each SIP message. <emphasis role="strong">Bison</emphasis> is the GNU implementation
+		compatible with Yacc (Yet Another Compiler Compiler), but also Yacc or Byacc can be used instead of it.
+	</para>
+	<para>
+		Extending the configuration file can be done by adding a new core parameter or a new core functions.
+		Apart of these, one can add new routing blocks, keywords or init and runtime instructions.
+	</para>
+	<para>
+		The config file include two main categories of statements:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				<emphasis role="strong">init statements</emphasis> - this category includes setting the global
+				parameters, loading modules and setting module parameters. These statements are executed only
+				one time, at startup.
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				<emphasis role="strong">runtime statements</emphasis> - this category includes the actions
+				executed many times, after &openser; initialization. These statements are grouped in route
+				blocks, there being different route types that get executed for certain events.
+			</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+						<emphasis role="strong">route</emphasis> -  is executed when a SIP request is received
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong">onreply_route</emphasis> - is executed when a SIP reply is
+						received
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong">error_route</emphasis> - is executed when some errors
+						(mainly related to message parsing) are encountered
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong">failure_route</emphasis> - is executed when a negative reply
+						was received for a transaction that armed the handler for the failure event.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong">branch_route</emphasis> - is executed for each destination branch
+						of the transaction that armed the handler for it.
+					</para>
+				</listitem>
+			</itemizedlist>
+		</listitem>
+	</itemizedlist>
+	<para>
+		In the next section we will present how to add a core parameter and add a routing action -- core function.
+		You need to have knowledge of <emphasis role="strong">flex</emphasis> and
+		<emphasis role="strong">bison</emphasis>.
+	</para>
+	<section id="c08add_parameters">
+		<title>Adding a core parameter</title>
+		<para>
+			Some of the core parameters correspond to global variables in &openser; sources. Others induce
+			actions to be taken during statup.
+		</para>
+		<para>
+			Let's follow step by step the definition and usage of the core parameter
+			<emphasis role="strong">log_name</emphasis>. It is a string parameter that specifies the 
+			value to be printed as application name in syslog messages.
+		</para>
+		<para>
+			First is the declaration of the variable in the C code. The <emphasis role="strong">log_name</emphasis>
+			is defined in <emphasis role="strong">main.c</emphasis> and initialized to
+			<emphasis role="strong">0</emphasis> (when set to <emphasis role="strong">o</emphasis>,
+			it is printed the &openser; name (including path) in the syslog).
+		</para>
+<programlisting  format="linespecific">
+...
+char *log_name = 0;
+...
+		</programlisting>
+		<para>
+			Next is to define the token in the <emphasis role="strong">flex</emphasis> file:
+			<emphasis role="strong">cfg.lex</emphasis>.
+		</para>
+<programlisting  format="linespecific">
+...
+LOGNAME		log_name
+...
+		</programlisting>
+		<para>
+			The association of a token ID and extending the grammar of the configuration file is done
+			in the <emphasis role="strong">bison</emphasis> file:
+			<emphasis role="strong">cfg.y</emphasis>.
+		</para>
+<programlisting  format="linespecific">
+...
+%token LOGNAME
+...
+assign_stm: ...
+		| LOGNAME EQUAL STRING { log_name=$3; }
+		| LOGNAME EQUAL error { yyerror("string value expected"); }
+...
+		</programlisting>
+		<para>
+			The grammar was extended with a new assign statement, that allows to write in the configuration
+			file an expression like:
+		</para>
+		<programlisting  format="linespecific">
+...
+log_name = "openser123"
+...
+		</programlisting>
+		<para>
+			When having a line like above one in the configuration file, the variable
+			<emphasis role="strong">log_name</emphasis> in C code will be initialized to the string
+			in the right side of the equal operator.
+		</para>
+	</section>
+	<section id="c08add_functions">
+		<title>Adding a core function</title>
+		<para>
+			To introduce new functions in &openser; core that are exported to the configuration file
+			the grammar have to be extended (<emphasis role="strong">bison</emphasis> and
+			<emphasis role="strong">flex</emphasis> files), the interpreter must be enhanced to be
+			able to run the new actions.
+		</para>
+		<para>
+			Behind each core function resides an action structure. This data type is defined in
+			<emphasis role="strong">route_struct.h</emphasis>:
+		</para>
+<programlisting  format="linespecific">
+...
+typedef struct action_elem_ {
+	int type;             /* type of the element */
+	union {
+		long number;      /* element is a long number */
+		char* string;     /* element is a null-terminated string */
+		void* data;       /* element is pointer to a custom type data */
+		str s;            /* element is str value */
+		pv_spec_t* item;  /* element is a pseudo-variable */
+	} u;
+} action_elem_t, *action_elem_p;
+
+/* increase MAX_ACTION_ELEMS to support more module function parameters
+   if you change this define, you need also to change the assignment in
+   the action.c file */
+#define MAX_ACTION_ELEMS	7
+struct action{
+	int type;                             /* type of action: forward, drop, log, send ...*/
+	action_elem_t elem[MAX_ACTION_ELEMS]; /* the elements of this action: parameters, etc. */
+	int line;                             /* line in cofig file where the action is used */
+	struct action* next;                  /* next action in config file */
+};
+...
+		</programlisting>
+		<para>
+			Each action is identified by a type. The types of actions are defined in same header
+			file. For example, the <emphasis role="strong">strip(...)</emphasis> function has
+			the type <emphasis role="strong">STRIP_T</emphasis>, the functions exported by
+			modules have the type <emphasis role="strong">MODULE_T</emphasis>.
+		</para>
+		<para>
+			To each action may be given a set of parameters, so called action elements. In case of
+			functions exported by modules, the first element is the pointer to the function, next are the
+			parameters given to that function in configuration file.
+		</para>
+		<para>
+			For debugging and error detection, the action keeps the line number in configuration file
+			where it is used.
+		</para>
+		<para>
+			Next we discuss how <emphasis role="strong">setflag(...)</emphasis> config function was
+			implemented.
+		</para>
+		<section id="c08extend_grammar">
+			<title>Extending the grammar</title>
+			<para>
+				Define the token in <emphasis role="strong">flex</emphasis> file:
+				<emphasis role="strong">cfg.lex</emphasis>.
+			</para>
+<programlisting  format="linespecific">
+...
+SETFLAG			"setflag"
+...
+			</programlisting>
+			<para>
+				Assign a token ID and extend the <emphasis role="strong">bison</emphasis> grammar.
+			</para>
+			<programlisting  format="linespecific">
+...
+%token SETFLAG
+...
+cmd:	...
+
+		| SETFLAG LPAREN NUMBER RPAREN {mk_action2($$, SETFLAG_T, NUMBER_ST, 0,
+					(void *)$3, 0 ); }
+		| SETFLAG error { $$=0; yyerror("missing '(' or ')'?"); }
+
+...
+			</programlisting>
+			<para>
+				First grammar specification says that <emphasis role="strong">setflag(...)</emphasis>
+				can have one parameter of type <emphasis role="strong">number</emphasis>. The other
+				rule for grammar is to detect error cases.
+			</para>
+		</section>
+		<section id="c08extend_interpreter">
+			<title>Extending the interpreter</title>
+			<para>
+				First step is to add a new action type in <emphasis role="strong">route_struct.h</emphasis>.
+			</para>
+			<para>
+				Then add a new case in the switch of action types, file
+				<emphasis role="strong">action.c</emphasis>, function
+				<emphasis role="strong"></emphasis>
+			</para>
+			<programlisting  format="linespecific">
+...
+case SETFLAG_T:
+	ret = setflag( msg, a->elem[0].u.number );
+	break;
+...
+			</programlisting>
+			<para>
+				The C function <emphasis role="strong">setflag(...)</emphasis> is defined and implemented
+				in <emphasis role="strong">flags.{c,h}</emphasis>. It simply sets the bit in 
+				<emphasis role="strong">flags</emphasis>
+				attribute of <emphasis role="strong">sip_msg</emphasis> at the position given by
+				the parameter.
+			</para>
+			<programlisting  format="linespecific">
+...
+int setflag( struct sip_msg* msg, flag_t flag ) {
+	msg->flags |= 1 &lt;&lt; flag;
+	return 1;
+}
+...
+			</programlisting>
+			<para>
+				We are not done yet. &openser; does a checking of the actions tree after all configuration
+				file was loaded. It does sanity checks and optimization for run time. For our case, it does
+				a double-check that the parameter is a number and it is in the range of
+				<emphasis role="strong">0...31</emphasis> to fit in the bits size of an integer value. See
+				function <emphasis role="strong">fix_actions(...)</emphasis> in
+				<emphasis role="strong">route.c</emphasis>.
+			</para>
+			<programlisting  format="linespecific">
+...
+		case SETFLAG_T:
+		case RESETFLAG_T:
+		case ISFLAGSET_T:
+			if (t->elem[0].type!=NUMBER_ST) {
+				LM_CRIT("bad xxxflag() type %d\n", t->elem[0].type );
+				ret=E_BUG;
+				goto error;
+			}
+			if (!flag_in_range( t->elem[0].u.number )) {
+				ret=E_CFG;
+				goto error;
+			}
+			break;
+...
+			</programlisting>
+			<para>
+				Last thing you have to add is to complete the function
+				<emphasis role="strong">print(action(...)</emphasis> with a new case for your action
+				that will be used to print the actions tree -- for debugging purposes. See it in file
+				<emphasis role="strong">route_struct.c</emphasis>.
+			</para>
+			<programlisting  format="linespecific">
+...
+		case SETFLAG_T:
+				LM_DBG("setflag(");
+				break;
+...
+			</programlisting>
+			<para>
+				From now on, you can use in your configuration file the function
+				<emphasis role="strong">setflag(_number_)</emphasis>.
+			</para>
+			<para>
+				Don't forget to add documentation in
+				<emphasis role="strong">OpenSER Core Cookbook</emphasis>.
+			</para>
+		</section>
+	</section>
+</chapter>

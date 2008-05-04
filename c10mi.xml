@@ -1,0 +1,311 @@
+<chapter id="c10mi">
+	<title>Management Interface</title>
+	<para>
+		The <emphasis role="strong">Management Interface</emphasis> is an abstract layer
+		introduced to allow interaction between &openser; and external applications like
+		shell terminal or web applications. In the past, there were two ways to interact
+		with such applications: via <emphasis role="strong">FIFO</emphasis> file
+		and via <emphasis role="strong">unix sockets</emphasis>.
+	</para>
+	<para>
+		<emphasis role="strong">MI</emphasis> came and introduced an abstractization between
+		the transport and application levels. All MI commands are available for all
+		available transports. At this moment the following transports are available:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				fifo - (mi_fifo mofule) - the communication is done via FIFO file using a
+				simple text-based, line oriented protocol.
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				xmlrpc - (mi_xmlrpc) - the communication is done via XMLRPC
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				datagram - (mi_datagram) - the communication is done via unix socket files
+				or UDP sockets.
+			</para>
+		</listitem>
+	</itemizedlist>
+	<para>
+		To implement a new command for <emphasis role="strong">MI</emphasis> you don't need
+		to interact with the transports. <emphasis role="strong">MI</emphasis> will pass to
+		your function a compiled version of the command, in the form of a tree. The functions
+		walks through the tree, finds the input parameters, executes the actions accordingly,
+		and returns a new <emphasis role="strong">MI</emphasis> tree with the response to
+		the command.
+	</para>
+	<section id="c10mi_command_function">
+		<title>MI Command Function</title>
+		<para>
+			The function you have to implement for a new <emphasis role="strong">MI</emphasis>
+			command has a simple prototype.
+		</para>
+		<programlisting  format="linespecific">
+...
+struct mi_root my_my_function(struct mi_root *tree, void *param);
+...
+		</programlisting>
+		<para>
+			Parameters:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					tree - the tree with the input parameters sent via the transport layer.
+					The <emphasis role="strong">struct mi_root</emphasis> is defined in
+					<emphasis role="strong">mi/three.h</emphasis>.
+				</para>
+<programlisting  format="linespecific">
+...
+struct mi_node {
+	str value;                   /* value of node (parameter) */
+	str name;                    /* name of node (parameter) */
+	struct mi_node *kids;        /* children nodes */
+	struct mi_node *next;        /* sibling nodes */
+	struct mi_node *last;        /* last node */
+	struct mi_attr *attributes;  /* the attributes of the node */
+};
+
+struct mi_root {
+	unsigned int       code;       /* return code of the command */
+	str                reason;     /* reason code */
+	struct mi_handler  *async_hdl; /* handler function for asynchronous replying */
+	struct mi_node     node;       /* head of the tree with parameters (nodes) */
+};
+...
+				</programlisting>
+			</listitem>
+			<listitem>
+				<para>
+					param - parameter given when registering the command to
+					<emphasis role="strong">MI</emphasis>.
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			Returns a tree containing the response to be send back for that command or NULL in
+			case of error.
+		</para>
+	</section>
+	<section id="c10register_command">
+		<title>Register MI Command</title>
+		<para>
+			It is recommended to register new <emphasis role="strong">MI</emphasis> commands via
+			&openser; module interface - described later, in the chapted about
+			<emphasis role="strong">module development</emphasis>.
+		</para>
+		<para>
+			The alternative is to use <emphasis role="strong">register_mi_cmd(...)</emphasis>,
+			defined in file <emphasis role="strong">mi/mi.h</emphasis>.
+		</para>
+<programlisting  format="linespecific">
+...
+typedef struct mi_root* (mi_cmd_f)(struct mi_root*, void *param);
+typedef int (mi_child_init_f)(void);
+
+int register_mi_cmd(mi_cmd_f f, char *name, void *param,
+		mi_child_init_f in, unsigned int flags);
+...
+		</programlisting>
+		<para>
+			Parameters:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					f - function to be called when the command is received from the transport layer
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					name - the name of the command
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					param - parameter to be given when function is executed
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					in - function to be executed at &openser; initialization time
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					flags - set of flags describing properties of the command
+				</para>
+				<programlisting  format="linespecific">
+...
+#define MI_ASYNC_RPL_FLAG   (1&lt;&lt;0) // - the reply to command is asynchronous
+#define MI_NO_INPUT_FLAG    (1&lt;&lt;1) // - the command does not get any input parameters
+...
+				</programlisting>
+			</listitem>
+		</itemizedlist>
+		<para>
+			Returns 0 if the MI command was successfully registered, &lt;0 in case of error.
+		</para>
+	</section>
+	<section id="c10example">
+		<title>Example of MI Command Function</title>
+		<para>
+			We look at a MI command exported by <emphasis role="strong">dispatcher</emphasis>
+			module. The command allow to set the state (active/inactive) for a destination
+			address in the dispatching list (read documentation for
+			<emphasis role="strong">dispatcher</emphasis> module).
+		</para>
+		<para>
+			The command expects 3 parameters:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					state - the state to set to the destination address
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					group - the id of the group (destination set) the destination belongs to
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					address - the address of the destination to change the state for it
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			The function expects to find in the input tree, one flag (state), one number (group)
+			and a string (the address). If not, an reply containing error message is sent back.
+			If the parameters are ok and the destination is found, the state is changed accordingly
+			and successful code and message is sent back, in not, an appropriate error code and
+			message is sent back.
+		</para>
+		<para>
+			Code is shown below (in the sources look in file
+			<emphasis role="strong">modules/dispatcher/dispatcher.c</emphasis>).
+		</para>
+		<programlisting  format="linespecific">
+...
+static struct mi_root* ds_mi_set(struct mi_root* cmd_tree, void* param)
+{
+	str sp;
+	int ret;
+	unsigned int group, state;
+	struct mi_node* node;
+
+	node = cmd_tree->node.kids;
+	if(node == NULL)
+		return init_mi_tree( 400, MI_MISSING_PARM_S, MI_MISSING_PARM_LEN);
+	sp = node->value;
+	if(sp.len&lt;=0 || !sp.s)
+	{
+		LM_ERR("bad state value\n");
+		return init_mi_tree( 500, "bad state value", 15);
+	}
+
+	state = 1;
+	if(sp.s[0]=='0' || sp.s[0]=='I' || sp.s[0]=='i')
+		state = 0;
+	node = node->next;
+	if(node == NULL)
+		return init_mi_tree( 400, MI_MISSING_PARM_S, MI_MISSING_PARM_LEN);
+	sp = node->value;
+	if(sp.s == NULL)
+	{
+		return init_mi_tree(500, "group not found", 15);
+	}
+
+	if(str2int(&amp;sp, &amp;group))
+	{
+		LM_ERR("bad group value\n");
+		return init_mi_tree( 500, "bad group value", 16);
+	}
+
+	node= node->next;
+	if(node == NULL)
+		return init_mi_tree( 400, MI_MISSING_PARM_S, MI_MISSING_PARM_LEN);
+
+	sp = node->value;
+	if(sp.s == NULL)
+	{
+		return init_mi_tree(500,"address not found", 18 );
+	}
+
+	if(state==1)
+		ret = ds_set_state(group, &amp;sp, DS_INACTIVE_DST, 0);
+	else
+		ret = ds_set_state(group, &amp;sp, DS_INACTIVE_DST, 1);
+
+	if(ret!=0)
+	{
+		return init_mi_tree(404, "destination not found", 21);
+	}
+
+	return init_mi_tree( 200, MI_OK_S, MI_OK_LEN);
+}
+...
+		</programlisting>
+	</section>
+	<section id="c10mi_fifo_command">
+		<title>MI FIFO Command</title>
+		<para>
+			The structure of the command that has to be sent to transport layer depends
+			on the implementation. Check the documentation of the modules implementing the
+			MI transports.
+		</para>
+		<para>
+			For FIFO, the structure is line oriented, command being plain text.
+		</para>
+		<programlisting  format="linespecific">
+...
+:_command_name_:_reply_fifo_file_
+_parameters_
+_empty_line_
+...
+		</programlisting>
+		<para>
+			MI FIFO command structure:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					_command_name_ - the name of the command
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					_reply_fifo_file_ - the FIFO file where to write the reply message
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					_parameters_ - values for parameters, one per line
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					_empty_line_ - an empty line to mark the end of the command
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			For the command described in the previous section, it can look like:
+		</para>
+		<programlisting  format="linespecific">
+...
+:ds_set_state:openser_fifo_reply
+i
+2
+sip:10.10.10.10:5080
+\n
+...
+		</programlisting>
+	</section>
+</chapter>

@@ -1,0 +1,347 @@
+<chapter id="c06sipparser">
+	<title>SIP Parser</title>
+	<para>
+		&openser; includes its own implementation of SIP parser. It is known
+		as <emphasis role="strong">lazy</emphasis> or
+		<emphasis role="strong">incremental</emphasis> parser. That means
+		it parses until it founds the required elements or encounters ends
+		of SIP message.
+	</para>
+	<para>
+		All parsing functions and data structures are in the files from the
+		directory <emphasis role="strong">parser</emphasis>. The main file
+		for SIP message parsing is
+		<emphasis role="strong">parser/msg_parser.c</emphasis> with the
+		corresponding header file
+		<emphasis role="strong">parser/msg_parser.h</emphasis>.
+	</para>
+	<para>
+		It does not parse entirely the parts of the SIP message. For most of
+		the SIP headers, it identifies the name and body, it does not parse
+		the content of header's body. It may happen that a header is malformed
+		and &openser; does not report any error as there was no request to
+		parse that header body. However, most used headers are parsed entirely
+		by default. Such headers are top most Via, To, CSeq, Content-Lenght.
+	</para>
+	<para>
+		The parser does not duplicate the values, it makes references inside
+		the SIP message buffer it parses. For the
+		<emphasis role="strong">parsed</emphasis> structures it allocates
+		private memory. It keeps the state of parsing, meaning that it has
+		an anchor to the beginning of unparsed part of the SIP message and
+		stores a bitmask of flags with parsed known headers. If the function
+		to parse a special header is called twice, the second time will return
+		immediately as it finds in the bitmask that the header was already
+		parsed.
+	</para>
+	<para>
+		This chapter in not intended to present all parsing functions, you
+		have to check the files in the directory
+		<emphasis role="strong">parser</emphasis>. There is kind of naming
+		convention, so if you need the function to parse the header
+		<emphasis role="strong">XYZ</emphasis>, look for the files
+		<emphasis role="strong">parser/parse_XYZ.{c,h}</emphasis>. If you
+		don't find it, second try is to use
+		<emphasis role="strong">ctags</emphasis> to locate a
+		<emphasis role="strong">parse_XYZ(...)</emphasis> function. If no
+		luck, then ask on &openser; development mainling list
+		<emphasis role="strong">devel@lists.openser.org</emphasis>. Final
+		solution in case on negative answer is to implement it yourself. For
+		example, CSeq header parser is in
+		<emphasis role="strong">parser/parse_cseq.{c,h}</emphasis>.
+	</para>
+	<para>
+		The next sections will present the parsing functions
+		that give access to the most important parts of a SIP message.
+	</para>
+	<section id="c06parse_uri">
+		<title>parse_uri(...)</title>
+		<para>
+		</para>
+		<example id="c06p_parse_uri">
+			<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+int parse_uri(char *buf, int len, struct sip_uri* uri);
+...
+			</programlisting>
+		</example>
+		<para>
+		</para>
+		<example id="c06ex_parse_uri">
+			<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+...
+			</programlisting>
+		</example>
+	</section>
+	<section id="c06parse_msg">
+		<title>parse_msg(...)</title>
+		<para>
+			A developer does not interfere too much with this function as it is called
+			automatically by &openser; when a SIP message is received from the network.
+		</para>
+		<para>
+			You can use it if you load the content of SIP message from a file or database,
+			or you received on different channels, up to your extension implementation. You
+			should be aware that it is not enough to call this function and then run the
+			actions from the configuration file. There are some attributes in the structure
+			<emphasis role="strong">sip_msg</emphasis> that are specific to the environment:
+			received socket, source IP and port, ...
+		</para>
+		<example id="c06p_parse_msg">
+			<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+int parse_msg(char* buf, unsigned int len, struct sip_msg* msg);
+...
+			</programlisting>
+		</example>
+		<para>
+			Return 0 if parsing was OK, &gt;0 if error occurred.
+		</para>
+		<example id="c06ex_parse_msg">
+			<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+str msg_buf;
+struct sip_msg msg;
+...
+msg_buf.s = "INVITE sip:user@sipserver.com SIP/2.0\r\nVia: ...";
+msg_buf.len = strlen(msg_buf.s);
+
+if (parse_msg(buf,len, &amp;msg)!=0) {
+	LM_ERR("parse_msg failed\n");
+	return -1;
+}
+
+if(msg.first_line.type==SIP_REQUEST)
+	LM_DBG("SIP method is [%.*s]\n", msg.first_line.u.request.method.len,
+		msg.first_line.u.request.method.s);
+...
+			</programlisting>
+		</example>
+	</section>
+	<section id="c06parse_headers">
+		<title>parse_headers(...)</title>
+		<para>
+			Parse the SIP message until the headers specified by parameter flags
+			<emphasis role="strong">flags</emphasis> are found. The parameter
+			<emphasis role="strong">next</emphasis> can be used when a header can
+			occur many times in a SIP message, to continue parsing until a new header
+			of that type is found.
+		</para>
+		<para>
+			The values that can be used for <emphasis role="strong">flags</emphasis> are
+			defined in <emphasis role="strong">parser/hf.h</emphasis>.
+		</para>
+		<para>
+			When searching to get a specific header, all the headers encountered during parsing
+			are hooked in the structure <emphasis role="strong">sip_msg</emphasis>.
+		</para>
+		<example id="c06p_parse_headers">
+			<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+int parse_headers(struct sip_msg* msg, hdr_flags_t flags, int next);
+...
+			</programlisting>
+		</example>
+		<para>
+			Return 0 if parsing was sucessful, &gt;0 in case of error.
+		</para>
+		<example id="c06ex_parse_headers">
+			<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+if(parse_headers(msg, HDR_CALLID_F, 0)!=0)
+{
+	LM_ERR("error parsing CallID header\n");
+	return -1;
+}
+...
+			</programlisting>
+		</example>
+	</section>
+	<section id="c06parse_to">
+		<title>parse_to(...)</title>
+		<para>
+			Parse a buffer that contains the body of a To header. The function is
+			defined in <emphasis role="strong">parser/parse_to.h</emphasis>.
+		</para>
+		<example id="c06p_parse_to">
+			<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+char* parse_to(char* buffer, char *end, struct to_body *to_b);
+...
+			</programlisting>
+		</example>
+		<para>
+			Return 0 in case of success, &gt;0 in case of error.
+		</para>
+		<para>
+			The next example shows the <emphasis role="strong">parse_from(...)</emphasis>
+			function that makes use of <emphasis role="strong">parse_to(...)</emphasis> to
+			parse the body of header <emphasis role="strong">From</emphasis>. The function
+			is located in file <emphasis role="strong">parser/parse_from.c</emphasis>.
+		</para>
+		<para>
+			The structure filled at parsing is hooked in the structure
+			<emphasis role="strong">sip_msg</emphasis>, inside the attribute
+			<emphasis role="strong">from</emphasis>, which is the shortcut to the
+			header <emphasis role="strong">From</emphasis>.
+		</para>
+		<example id="c06ex_parse_to">
+			<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+<![CDATA[
+int parse_from_header( struct sip_msg *msg)
+{
+	struct to_body* from_b;
+
+	if ( !msg->from && ( parse_headers(msg,HDR_FROM_F,0)==-1 || !msg->from)) {
+		LM_ERR("bad msg or missing FROM header\n");
+		goto error;
+	}
+
+	/* maybe the header is already parsed! */
+	if (msg->from->parsed)
+		return 0;
+
+	/* first, get some memory */
+	from_b = pkg_malloc(sizeof(struct to_body));
+	if (from_b == 0) {
+		LM_ERR("out of pkg_memory\n");
+		goto error;
+	}
+
+	/* now parse it!! */
+	memset(from_b, 0, sizeof(struct to_body));
+	parse_to(msg->from->body.s,msg->from->body.s+msg->from->body.len+1,from_b);
+	if (from_b->error == PARSE_ERROR) {
+		LM_ERR("bad from header\n");
+		pkg_free(from_b);
+		set_err_info(OSER_EC_PARSER, OSER_EL_MEDIUM, "error parsing From");
+		set_err_reply(400, "bad From header");
+		goto error;
+	}
+	msg->from->parsed = from_b;
+
+	return 0;
+error:
+	return -1;
+}
+]]>
+...
+			</programlisting>
+		</example>
+	</section>
+	<section id="c06get_msg_body">
+		<title>Get Message Body</title>
+		<para>
+			Next example shows how to get the content of SIP message body in a 'str'
+			variable.
+		</para>
+		<example id="c06ex_get_msg_body">
+			<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+int get_msg_body(struct sip_msg *msg, str *body)
+{
+	/* 'msg' is a pointer to a valid struct sip_msg */
+
+	/* get message body
+	- after that whole SIP MESSAGE is parsed
+	- calls internally parse_headers(msg, HDR_EOH_F, 0)
+	*/
+	body->s = get_body( msg );
+	if (body->s==0) 
+	{
+		LM_ERR("cannot extract body from msg\n");
+		return -1;
+	}
+
+	/* content-length (if present) must be already parsed */
+	if (!msg->content_length) 
+	{
+		LM_ERR("no Content-Length header found!\n");
+		return -1;
+	}
+	body->len = get_content_length( msg );
+	return 0;
+}
+...
+			</programlisting>
+		</example>
+	</section>
+	<section id="c06get_header_body">
+		<title>Get Header Body</title>
+		<para>
+			You can see in the next example how to access the body of header
+			<emphasis role="strong">Call-ID</emphasis>.
+		</para>
+		<example id="c06ex_get_header_body">
+			<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+void print_callid_header(struct sip_msg *msg)
+{
+	if(msg==NULL)
+		return;
+	if(parse_headers(msg, HDR_CALLID_F, 0)!=0)
+	{
+		LM_ERR("error parsing CallID header\n");
+		return;
+	}
+		
+	if(msg->callid==NULL || msg->callid->body.s==NULL)
+	{
+		LM_ER("NULL call-id header\n");
+		return;
+	}
+	LM_INFO("Call-ID: %.*s\n", msg->callid->body.len, msg->callid->body.s);
+}
+...
+			</programlisting>
+		</example>
+	</section>
+	<section id="c06new_header_parsing">
+		<title>New Header Parsing Function</title>
+		<para>
+			The section gives the guidelines to add a new function for parsing
+			a header.
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					add source and header files in directory <emphasis role="strong">parser</emphasis>
+					naming them <emphasis role="strong">parse_hdrname.{c,h}</emphasis>.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					if the header is used very often, consider doing speed optimization by allocating
+					a header type and flag. That will allow to identify the header via integer comparison
+					after the header was parsed and added in <emphasis role="strong">headers</emphasis>
+					list in the structure <emphasis role="strong">sip_msg</emphasis>.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					make sure you add the code to properly clean up the header structure when the
+					structure <emphasis role="strong">sip_msg</emphasis> is freed.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					make sure that the <emphasis role="strong">tm</emphasis> module properly clones
+					the header or it resets the pointers to the header when copying the structure
+					<emphasis role="strong">sip_msg</emphasis> in shared memory.
+				</para>
+			</listitem>
+		</itemizedlist>
+	</section>
+</chapter>

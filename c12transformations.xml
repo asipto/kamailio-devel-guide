@@ -1,0 +1,244 @@
+<chapter id="c12transformations">
+	<title>Transformations</title>
+	<para>
+		The transformations are strictly related to pseudo-variables. They are properties that
+		can be associated to instances of pseudo-variables. A transformation produces changes to the
+		value returned by a pseudo-variable. There can be a chain of transformations assigned to same
+		instance of a pseudo-variable.
+	</para>
+	<para>
+		An example of a transformation is to get a substring from the value returned by a
+		pseudo-variable. Another one is to get the length of the values returned by a pseudo-variable.
+	</para>
+	<para>
+		The value of a pseudo-variable with a chain of transformations is evaluated as:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				get the value of the pseudo-variable
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				apply the operation specified by the first transformation to the value returned by
+				the pseudo-variable
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				apply the operation specified by the current transformation to the value returned by
+				the previous transformation. Go to next transformation.
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				the value returned by the last transformation is returned to script or to calling C code.
+			</para>
+		</listitem>
+	</itemizedlist>
+	<para>
+		Behind each transformation it is a function that does value (pv_value_t) manipulation. It has as input
+		such a value and as output another value, stored over the input value. The transformation are
+		implemented only in the &openser; core, data structures and functions are in files
+		<emphasis role="strong">transformations.{c,h}</emphasis>.
+	</para>
+	<section id="c12naming_format">
+		<title>Naming Format</title>
+		<para>
+			The transformations are given in between the pharantesis around the parenthesis of a pseudo-variable.
+			The transformation name and parameters are enclosed in between curly brackets
+			<emphasis role="strong">{ }</emphasis>. The grammar for a transformation specifier:
+		</para>
+		<programlisting  format="linespecific">
+...
+'{' classname '.' innername ( ',' parameter )* '}'
+...
+		</programlisting>
+		<para>
+			The tokens are:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					classname - string identifying the class of transformation. So far there are:
+				</para>
+				<itemizedlist>
+					<listitem>
+						<para>
+							's' - string transformations
+						</para>
+					</listitem>
+					<listitem>
+						<para>
+							'uri' - URI transformations
+						</para>
+					</listitem>
+					<listitem>
+						<para>
+							'param' - parameter transformations
+						</para>
+					</listitem>
+				</itemizedlist>
+			</listitem>
+			<listitem>
+				<para>
+					innername - string identifying the operation within the class of transformations
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					parameter - the parameter to the transformation. There can be transformation with no
+					parameters, one or more parameters.
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			Example of existing transformations:
+		</para>
+<programlisting  format="linespecific">
+...
+{s.substr,1,2} - return the string with second and the third characters (substring of length 2 from the
+                 second character)
+{uri.user} -  return the user part of the SIP URI stored in the pseudo-variable on which this transformation
+              is applied
+...
+		</programlisting>
+	</section>
+	<section id="c12data_structures">
+		<title>Data Structures</title>
+		<para>
+			Internally, to the classname of a transformation it is associated type, an integer number, and to
+			the innername a subtype, also an integer number. Constants and definitions are in file
+			<emphasis role="strong">transformations.h</emphasis>
+		</para>
+<programlisting  format="linespecific">
+...
+typedef struct tr_param_ {
+	int type;        /* type of the parameter value */
+	union {
+		int n;       /* the integer value of the parameter */
+		str s;       /* the string value of the parameter */
+		void *data;  /* pseudo-variable spec of the parameter */
+	} v;
+	struct tr_param_ *next;  /* link to next parameter */
+} tr_param_t, *tr_param_p;
+
+typedef int (*tr_func_t) (struct sip_msg *msg, tr_param_t *param, int subtype, pv_value_t *value);
+
+typedef struct trans_ {
+	str name;              /* full name of the transformation */
+	int type;              /* the id of the transformation class */
+	int subtype;           /* the id of the transformation inner name */
+	tr_func_t trf;         /* the function to be executed when applying the transformation */
+	tr_param_t *params;    /* the parameters for this transformation */
+	struct trans_ *next;   /* link to next transformation to be applied to same pseudo-variable */
+} trans_t, *trans_p;
+...
+		</programlisting>
+		<para>
+			The parameters of the function to be executed for a transformation:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					msg - the SIP message currently processed
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					param - the list with the parameters of the transformation
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					subtype - the subtype of the transformation
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					value - pointer to the value (pv_value_t) to apply transformation on it and store the result
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			There is one function for each transformation class, the exact operation to be applied is given
+			via subtype. The structure <emphasis role="strong">trans_t</emphasis> is what stands behind each
+			transformation occurrence.
+		</para>
+	</section>
+	<section id="c12adding_transformation">
+		<title>Adding a Transformation</title>
+		<para>
+			The core transformation framework assigns for each transformation class a function to parse the innername
+			and the parameters, plus a function to execute when the transformation need to be applied. To extend
+			an existing transformation class, you have to extend the two functions of that transformation. You have
+			to assign a subtype for your new transformation.
+		</para>
+		<para>
+			To add a new class, you have to extend the framework to recognize the class name, and implement the two
+			functions for it.
+		</para>
+		<para>
+			Exemplifying with transformation <emphasis role="strong">s.len</emphasis> - it returns the length
+			of the string value of a pseudo-variable. The type <emphasis role="strong">TR_STRING</emphasis>
+			and subtype <emphasis role="strong">TR_S_LEN</emphasis> are added in file
+			<emphasis role="strong">transformations.h</emphasis>.
+		</para>
+		<para>
+			The function <emphasis role="strong">parse_transformation(...)</emphasis> in file
+			<emphasis role="strong">transformations.c</emphasis> is extended to recognize the class
+			<emphasis role="strong">s</emphasis>.
+		</para>
+		<programlisting  format="linespecific">
+...
+	if(tclass.len==1 &amp;&amp; (*tclass.s=='s' || *tclass.s=='S'))
+	{
+		t->type = TR_STRING;
+		t->trf = tr_eval_string;
+		s.s = p; s.len = in-&gt;s + in-&gt;len - p;
+		p0 = tr_parse_string(&amp;s, t);
+		if(p0==NULL)
+			goto error;
+		p = p0;
+	}
+...
+		</programlisting>
+		<para>
+			It calls function <emphasis role="strong">tr_parse_string(...)</emphasis> to parse the rest of
+			the <emphasis role="strong">string</emphasis> transformation. In this function, if the inner name
+			is <emphasis role="strong">len</emphasis> it sets the subtype accordingly.
+		</para>
+		<programlisting  format="linespecific">
+...
+	if(name.len==3 &amp;&amp; strncasecmp(name.s, "len", 3)==0)
+	{
+		t->subtype = TR_S_LEN;
+		return p;
+	}
+...
+		</programlisting>
+		<para>
+			The transformation parser is now extended. Next is the interpreter, the function
+			<emphasis role="strong">tr_eval_str(...)</emphasis>.
+		</para>
+		<programlisting  format="linespecific">
+...
+	switch(subtype)
+	{
+		case TR_S_LEN:
+			if(!(val->flags&amp;PV_VAL_STR))
+				val->rs.s = int2str(val-&gt;ri, &amp;val-&gt;rs.len);
+
+			val-&gt;flags = PV_TYPE_INT|PV_VAL_INT|PV_VAL_STR;
+			val-&gt;ri = val-&gt;rs.len;
+			val-&gt;rs.s = int2str(val-&gt;ri, &amp;val-&gt;rs.len);
+			break;
+...
+		</programlisting>
+		<para>
+			The content of the pv_value_t variable is replaced with the length of the string representation
+			of its initial value.
+		</para>
+	</section>
+</chapter>

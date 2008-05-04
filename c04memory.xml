@@ -1,0 +1,369 @@
+<chapter id="c04memory">
+	<title>Memory Manager</title>
+	<para>
+		&openser; is a multi-process application, usage of shared memory is
+		required many times. The memory manager tries to simplify the work with
+		shared and private memory, providing a very simple programming interface.
+		The internal design took in consideration speed optimizations, something
+		very important for a real-time communication server.
+	</para>
+	<para>
+		The manager is initialized at start-up, creating the chunks for private and shared
+		memory. It is important to know that the shared memory is not available during
+		configuration parsing, that includes the setting of module parameters.
+	</para>
+	<para>
+		When the own memory manager cannot be used, &openser; falls back to SysV shared
+		memory system.
+	</para>
+	<para>
+		Shortly, the manager reserves a big chunk of system memory for itself at start-up,
+		then it allocates parts inside the chunk.
+	</para>
+	<figure>
+		<title>&openser; Memory Management</title>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref="./obj/openser_memory.png"/>
+			</imageobject>
+		</mediaobject>
+	</figure>
+
+
+	<section id="c04private_memory">
+		<title>Private Memory</title>
+		<para>
+			This type of memory is specific per process, no synchronization is needed to
+			access structures allocated in it. It should be used for variables that do not
+			need to be visible in other &openser; processes or for temporary operations.
+		</para>
+		<para>
+			To store static values in private memory and have it in all processes without
+			the need to synchronize for accessing it, you must create it before &openser;
+			forks.
+		</para>
+		<para>
+			To use the private memory manager you have to include the file:
+			<emphasis role="strong">mem/mem.h</emphasis>.
+		</para>
+		<section id="c04pkg_malloc">
+			<title>pkg_malloc(...)</title>
+			<para>
+				Allocates space in private memory.
+			</para>
+			<example id="c04p_pkg_malloc">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void* pkg_malloc(unsigned int size);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter specifies the size of memory space to be allocated. Returns the pointer to
+				memory if the the operation succeeds, NULL otherwise.
+			</para>
+			<example id="c05ex_pkg_malloc">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "mem/mem.h"
+...
+char *p;
+p = (char*)pkg_malloc(8*sizeof(char));
+if(p==NULL)
+{
+	LM_ERR("cannot allocate pkg memory\n");
+	exit;
+}
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c04pkg_free">
+			<title>pkg_free(...)</title>
+			<para>
+				Free allocated private memory.
+			</para>
+			<example id="c04p_pkg_free">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void *pkg_free(void *p);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter is the pointer to the memory to be freed.
+			</para>
+			<example id="c05ex_pkg_free">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "mem/mem.h"
+...
+char *p;
+p = (char*)pkg_malloc(8*sizeof(char));
+if(p==NULL)
+{
+	LM_ERR("cannot allocate pkg memory\n");
+	exit;
+}
+strcpy(p, "openser");
+LM_DBG("string value at %p is [%s]\n", p, p);
+pkg_free(p);
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c04pkg_realloc">
+			<title>pkg_realloc(...)</title>
+			<para>
+				Realloc a previously allocated memory chunk. It copies the content of the old
+				memory chunk to the new one. If the space after the old chunk is free and large enough
+				to scale to the new size, &openser; memory manager will set the size of the old chunk
+				to the new size, marking properly the memory zone, in this way, the copy operation
+				is skipped.
+			</para>
+			<example id="c04p_pkg_realloc">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void *pkg_realloc(void *p, unsigned int size);
+...
+				</programlisting>
+			</example>
+			<para>
+				The first parameter is the pointer to the memory space that needs to be re-sized. The
+				second parameter is the new size in bytes. The function return the pointer to the new
+				memory space, or NULL if an error occurred. Beware that the returned pointer may be
+				different than the old pointer.
+			</para>
+			<example id="c05ex_pkg_realloc">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "mem/mem.h"
+...
+char *p;
+p = (char*)pkg_malloc(8*sizeof(char));
+if(p==NULL)
+{
+	LM_ERR("cannot allocate pkg memory\n");
+	exit;
+}
+strcpy(p, "openser");
+LM_DBG("string value at %p is [%s]\n", p, p);
+p = (char*)pkg_realloc(p, 16*sizeof(char));
+if(p==NULL)
+{
+	LM_ERR("cannot re-allocate pkg memory\n");
+	exit;
+}
+strcat(p, " server");
+LM_DBG("string value at %p is [%s]\n", p, p);
+
+pkg_free(p);
+...
+				</programlisting>
+			</example>
+		</section>
+	</section>
+	<section id="c04shared_memory">
+		<title>Shared Memory</title>
+		<para>
+			The data stored in shared memory is visible in all &openser; modules. It is the space
+			where are stored user location records, the TM structures for stateful processing, routing
+			rules for dispatcher or lcr module, and many more.
+		</para>
+		<para>
+			The shared memory is initialized after the config file is parsed, because it need to know
+			the user and group &openser; is running under, for the case when the memory manger uses SysV
+			operations.
+		</para>
+		<para>
+			To use share memory functions in your C code you need to include the file:
+			<emphasis role="strong">mem/shm_mem.h</emphasis>. When accessing share memory data, you make sure
+			don't have a race between &openser; processes or protect via a lock.
+		</para>
+		<section id="c04shm_malloc">
+			<title>shm_malloc(...)</title>
+			<para>
+				Allocates space in shared memory.
+			</para>
+			<example id="c04p_shm_malloc">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void *shm_malloc(unsigned int size);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter specifies the size in bytes of the desired shared memory space. It returns
+				the pointer to shared memory in case of success, or NULL if an error occurred.
+			</para>
+			<example id="c05ex_shm_malloc">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "mem/shm_mem.h"
+...
+char *p;
+p = (char*)shm_malloc(8*sizeof(char));
+if(p==NULL)
+{
+	LM_ERR("cannot allocate shm memory\n");
+	exit;
+}
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c04shm_free">
+			<title>shm_free(...)</title>
+			<para>
+				Free a shared memory space previously allocated with 
+				<emphasis role="strong">shm_share(...)</emphasis>.
+			</para>
+			<example id="c04p_shm_free">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void shm_free(void *p);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter is the pointer to the shared memory space to be freed.
+			</para>
+			<example id="c05ex_shm_free">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "mem/shm_mem.h"
+...
+char *p;
+p = (char*)shm_malloc(8*sizeof(char));
+if(p==NULL)
+{
+	LM_ERR("cannot allocate shm memory\n");
+	exit;
+}
+strcpy(p, "openser");
+LM_DBG("string value at %p is [%s]\n", p, p);
+shm_free(p);
+...
+				</programlisting>
+			</example>
+		</section>
+		<section id="c04shm_realloc">
+			<title>shm_realloc(...)</title>
+			<para>
+				Realloc a previously allocated shared memory chunk. It copies the content of the old
+				memory chunk to the new one.
+			</para>
+			<example id="c04p_shm_realloc">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+void *shm_realloc(void *p, unsigned int size);
+...
+				</programlisting>
+			</example>
+			<para>
+				The first parameter is the pointer to the memory space that needs to be re-sized. The
+				second parameter is the new size in bytes. The function return the pointer to the new
+				memory space, or NULL if an error occurred. Beware that the returned pointer may be
+				different than the old pointer.
+			</para>
+			<example id="c05ex_shm_realloc">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "mem/shm_mem.h"
+...
+char *p;
+p = (char*)shm_malloc(8*sizeof(char));
+if(p==NULL)
+{
+	LM_ERR("cannot allocate shm memory\n");
+	exit;
+}
+strcpy(p, "openser");
+LM_DBG("string value at %p is [%s]\n", p, p);
+p = (char*)shm_realloc(p, 16*sizeof(char));
+if(p==NULL)
+{
+	LM_ERR("cannot re-allocate shm memory\n");
+	exit;
+}
+strcat(p, " server");
+LM_DBG("string value at %p is [%s]\n", p, p);
+
+shm_free(p);
+...
+				</programlisting>
+			</example>
+		</section>
+	</section>
+	<section id="c04troubleshooting">
+		<title>Troubleshooting</title>
+		<para>
+			There are two cases of memory problems:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					memory leak - allocating memory at runtime and don't free when no longer needing. It
+					results in <emphasis role="strong">out of memory</emphasis> messages. Note that such
+					messages might be because of too small size of the memory for the traffic, data or number
+					of subscribers &openser; has to handle.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					memory overwriting - writing more than was allocated for that structure. It results in
+					<emphasis role="strong">segmentation fault</emphasis>, crashing &openser;.
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			&openser; has an internal debugger for memory - it is able to show the chunks allocated
+			in private or shared memory and the file and line from where it was allocated. In
+			debugging mode it prints all calls for allocations and freeing memory.
+		</para>
+		<para>
+			To enable the memory debugger you have to recompile &openser;. Before that you have to edit the
+			file <emphasis role="strong">Makefile.defs</emphasis> and remove the define
+			<emphasis role="strong">F_MALLOC</emphasis> (<emphasis role="strong">-DF_MALLOC</emphasis>)
+			and add the define <emphasis role="strong">DBG_QM_MALLOC</emphasis>
+			(<emphasis role="strong">-DDBG_QM_MALLOC</emphasis>).
+		</para>
+		<para>
+			Once compiled and installed with memory debugging you have to set <emphasis role="strong">memlog</emphasis>
+			to a value lower than <emphasis role="strong">debug</emphasis> in configuration file. You can start 
+			&openser; and try to reproduce the errors again. Once memory leak errors are printed you can either
+			issue a <emphasis role="strong">signal USR1</emphasis> to the process that printed the messages
+			or stop &openser;. You get in the syslog file the status of the memory. If you see memory allocation
+			done from the same place in the sources, many times, at runtime, it is a memory leak. If not, increase
+			the memory size to fit your load needs and run again -- if you don't get the memory leak errors it was
+			the case of insufficient memory allocated for &openser;.
+		</para>
+		<para>
+			For memory overwriting a core should be generated. If yes, you can investigate it with
+			<emphasis role="strong">gdb</emphasis>.
+		</para>
+		<programlisting  format="linespecific">
+...
+# gdb /path/to/openser corefile
+...
+		</programlisting>
+		<para>
+			From the backtrace you should get the file and line where the overwriting happened. In case
+			a core is not generated, check the messages in the syslog. Look for
+			<emphasis role="strong">BUG</emphasis> and <emphasis role="strong">error</emphasis>, for
+			head or tail of a memory chunk being overwriting.
+		</para>
+	</section>
+</chapter>

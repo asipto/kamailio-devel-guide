@@ -1,0 +1,196 @@
+<chapter id="c02arch">
+	<title>&openser; Architecture</title>
+	<para>
+		&openser; has a modular architecture. As a big picture, there are two main categories:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				<emphasis>the core</emphasis> - it is the component that provides the low-level
+				functionalities for &openser;
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				<emphasis>the modules</emphasis> - are the components that provides the most
+				of the functionalities that make &openser; powerful in real world deployments.
+			</para>
+		</listitem>
+	</itemizedlist>
+
+	<figure>
+		<title>&openser; Architecture</title>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref="./obj/openser_design.png"/>
+			</imageobject>
+		</mediaobject>
+	</figure>
+
+	<section>
+		<title>&openser; Core</title>
+		<para>
+			The core includes:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					memory manager
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					SIP message parser
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					locking system
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					DNS and transport layer management (UDP, TCP, TLS, SCTP)
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					configuration file parser and interpreter
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					database abstraction layer (DB API)
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					management interface (MI) API
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					stateless forwarding
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					pseudo-variables and transformations engines
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					statistics engine
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					timer API
+				</para>
+			</listitem>
+		</itemizedlist>
+	</section>
+
+	<section>
+		<title>&openser; Modules</title>
+		<para>
+			With the modules you can get functionalities such as:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					user location management
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					accounting, authorization and authentication
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					text and regular expression operations
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					stateless replying
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					stateful processing
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					instant messaging and presence extensions
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					RADIUS support
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					database connectors
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					MI transports
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					CPL interpreter
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					sms and xmpp gateways
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					NAT traversal
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					Perl and Java SIP Servlet extensions
+				</para>
+			</listitem>
+		</itemizedlist>
+	</section>
+	<section id="c02message_processing">
+		<title>SIP Message Processing</title>
+		<para>
+			The execution of &openser; configuration file is triggered when receiving a SIP message from the network. The processing flow is different for
+			a SIP request or a SIP reply.
+		</para>
+
+		<figure>
+		<title>SIP Request Processing</title>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref="./obj/openser_request_processing.png"/>
+			</imageobject>
+		</mediaobject>
+		</figure>
+		<figure>
+		<title>SIP Reply Processing</title>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref="./obj/openser_reply_processing.png"/>
+			</imageobject>
+		</mediaobject>
+		</figure>
+
+		<para>
+			The document contains a chapter dedicated to <emphasis role="strong">Configuration File</emphasis> that explains its structure and the types
+			of routing blocks.
+		</para>
+	</section>
+</chapter>

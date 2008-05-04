@@ -1,0 +1,112 @@
+<chapter id="c13statistics">
+	<title>Statistics</title>
+	<para>
+		These are integer numbers that collect information about &openser; internals. They are providing real-time
+		feedback about health and load of an &openser; instance. In fact, they are represented by an integer variable or
+		a function that returns an integer.
+	</para>
+	<para>
+		The <emphasis role="strong">statistics engine</emphasis> is implemented in the files
+		<emphasis role="strong">statistics.{c,h}</emphasis>. If you want to extend it, you have to read and
+		understand the code in those file. The purpose of this chapter is to teach how to add new statistic
+		variables.
+	</para>
+	<para>
+		You have to include the header file <emphasis role="strong">statistics.h</emphasis> and declare the
+		statistic variable. We exemplify with the statistic <emphasis role="strong">stored_messages</emphasis>
+		from module <emphasis role="strong">msilo</emphasis>. In the file
+		<emphasis role="strong">modules/msilo/msilo.c</emphasis>.
+	</para>
+	<programlisting  format="linespecific">
+...		
+#include "../../statistics.h"
+
+stat_var* ms_stored_msgs;
+...
+	</programlisting>
+	<para>
+		Next is to register the statistic to the engine, which is done there via module interface (to be explained
+		later, in a dedicated chapter).
+	</para>
+	<programlisting  format="linespecific">
+...
+stat_export_t msilo_stats[] = {
+	{"stored_messages" ,  0,  &amp;ms_stored_msgs  },
+...
+/** module exports */
+struct module_exports exports= {
+	"msilo",    /* module id */
+...
+	msilo_stats,
+...	
+};
+...
+	</programlisting>
+	<para>
+		Alternative is to use the function <emphasis role="strong">register_stat(...)</emphasis> defined in
+		<emphasis role="strong">statistics.{c,h}</emphasis>.
+	</para>
+	<programlisting  format="linespecific">
+...
+int register_stat( char *module, char *name, stat_var **pvar, int flags);
+...
+	</programlisting>
+	<para>
+		The parameters are:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				module - name of the module exporting the statistic
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				name - name of the statistic
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				var - where the statistic value will be stored
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				flags - flags describing the statistic
+			</para>
+		</listitem>
+	</itemizedlist>
+	<para>
+		Updating the value of the statistic is done in function <emphasis role="strong">m_store(...)</emphasis>,
+		once a new message is stored in database.
+	</para>
+	<programlisting  format="linespecific">
+...
+update_stat(ms_stored_msgs, 1);
+...
+	</programlisting>
+	<section id="c13macros">
+		<title>Statistic Macros</title>
+		<para>
+			There are three macros that help to deal with statistic values easily.
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					update_stat (stat, val) - add to the statistic value the <emphasis role="strong">val</emphasis>.
+					<emphasis role="strong">val</emphasis> can be negative as well, resulting in substraction.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					reset_stat (stat) - set the value of the statistic to <emphasis role="strong">0</emphasis>
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					get_stat_val (stat) - return the value of the statistic
+				</para>
+			</listitem>
+		</itemizedlist>
+	</section>
+</chapter>

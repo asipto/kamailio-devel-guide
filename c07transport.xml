@@ -1,0 +1,53 @@
+<chapter id="c07transport">
+	<title>Transport Layer</title>
+	<para>
+		As a developer, the interaction with the transport layer is lower
+		and lower. It is already implemented the support for UDP, TCP, TLS and SCTP.
+		From the modules, you can use the API exported by <emphasis role="strong">sl</emphasis>
+		and <emphasis role="strong">tm</emphasis> modules to send stateless replies, or to
+		send stateful requests/replies. Sending stateless requests can be done with the functions
+		from core, exported in file <emphasis role="strong">forward.h</emphasis>.
+	</para>
+	<para>
+		The core takes care of receiving the messages from the network, the basic validation for them,
+		preparing the environment for a higher level processing of SIP messages. When developing new
+		extensions, you don't have to care about reading/writing from/to network.
+	</para>
+	<para>
+		If you want to investigate the implementation of transport layers, you can start with:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				<emphasis role="strong">udp_*.{c,h}</emphasis> for UDP
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				<emphasis role="strong">tcp_*.{c,h}</emphasis> for TCP
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				<emphasis role="strong">tls/*.{c,h}</emphasis> for TLS
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				<emphasis role="strong">sctp_*.{c,h}</emphasis> for SCTP
+			</para>
+		</listitem>
+	</itemizedlist>
+	<section id="c07dns">
+		<title>DNS Implementation</title>
+		<para>
+			&openser; follows the requirements specified in RFC3263 for server and service location.
+			That includes support for <emphasis role="strong">NAPTR</emphasis> and
+			<emphasis role="strong">SRV</emphasis> records as well.
+		</para>
+		<para>
+			To investigate the implementation related to DNS, start with files
+			<emphasis role="strong">resolve.{c,h}</emphasis>.
+		</para>
+	</section>
+</chapter>

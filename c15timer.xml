@@ -1,0 +1,277 @@
+<chapter id="c15timer">
+	<title>Timer</title>
+	<para>
+		&openser; provides an internal timer that ticks every 100 milliseconds. The step can be
+		changed at compile time. It offers developer API to:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				register functions to be run every 1 second or interval of multiple seconds
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				register functions to run every 100ms or interval of multiple 100ms
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				start a new timer process
+			</para>
+		</listitem>
+	</itemizedlist>
+	<para>
+		The timer API is implemented in the files <emphasis role="strong">timer.{c,h}</emphasis>. If
+		you want to extend the timer API you have to start with those files. We focus on how to add
+		new functions to be run by timer. The timer is available after shared memory initialization.
+	</para>
+	<section id="c15data_types">
+		<title>Data Types</title>
+		<para>
+			The functions that can be given as callbacks for timer have the following prototypes:
+		</para>
+		<programlisting  format="linespecific">
+...
+typedef unsigned long long utime_t;
+
+typedef void (timer_function)(unsigned int ticks, void* param);
+typedef void (utimer_function)(utime_t uticks, void* param);
+...
+		</programlisting>
+		<para>
+			Parameters are:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					ticks - number of second ticks elapsed at the moment of running the function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					uticks - number of 100mili-second ticks elapsed at the moment of running the function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					param - parameter given when registering the callback function
+				</para>
+			</listitem>
+		</itemizedlist>
+	</section>
+	<section id="c15functions">
+		<title>Timer API Functions</title>
+		<para>
+			Register a function to be executed by second-based timer:
+		</para>
+		<programlisting  format="linespecific">
+...
+int register_timer(timer_function f, void* param, unsigned int interval);
+...
+		</programlisting>
+		<para>
+			Parameters:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					f - callback function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					param - parameter to callback function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					interval - interval to execute the callback function
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			Register a function to be executed by millisecond-based timer:
+		</para>
+		<programlisting  format="linespecific">
+...
+int register_utimer(utimer_function f, void* param, unsigned int interval);
+...
+		</programlisting>
+		<para>
+			Parameters:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					f - callback function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					param - parameter to callback function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					interval - interval to execute the callback function
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			Register a function to start a new timer process:
+		</para>
+		<programlisting  format="linespecific">
+...
+int register_timer_process(timer_function f,void* param, unsigned int interval,
+		unsigned int flags);
+...
+		</programlisting>
+		<para>
+			Parameters:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					f - callback function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					param - parameter to callback function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					interval - interval to execute the callback function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					flags - flags describing the timer process
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			There are two functions that return the number of ticks elapsed since &openser; started,
+			one for second-based timer and the other for millisecond-based timer.
+		</para>
+		<programlisting  format="linespecific">
+...
+unsigned int get_ticks(void);
+
+utime_t get_uticks(void);
+...
+		</programlisting>
+	</section>
+	<section id="c15example">
+		<title>Example of usage</title>
+		<para>
+			Next we will show how the module <emphasis role="strong">msilo</emphasis> register a timer
+			function to clean the stored messages. See
+			<emphasis role="strong">modules/msilo/msilo.c</emphasis>.
+		</para>
+		<programlisting  format="linespecific">
+...
+#include "../../timer.h"
+...
+void m_clean_silo(unsigned int ticks, void *);
+...
+		</programlisting>
+		<para>
+			Registration to the second-based timer is done in function
+			<emphasis role="strong">mod_init()</emphasis>.
+		</para>
+		<programlisting  format="linespecific">
+...
+register_timer(m_clean_silo, 0, ms_check_time);
+...
+		</programlisting>
+		<para>
+			Function implementation is:
+		</para>
+		<programlisting  format="linespecific">
+...
+<![CDATA[
+void m_clean_silo(unsigned int ticks, void *param)
+{
+	msg_list_el mle = NULL, p;
+	db_key_t db_keys[MAX_DEL_KEYS];
+	db_val_t db_vals[MAX_DEL_KEYS];
+	db_op_t  db_ops[1] = { OP_LEQ };
+	int n;
+	
+	LM_DBG("cleaning stored messages - %d\n", ticks);
+	
+	msg_list_check(ml);
+	mle = p = msg_list_reset(ml);
+	n = 0;
+	while(p)
+	{
+		if(p->flag & MS_MSG_DONE)
+		{
+#ifdef STATISTICS
+			if(p->flag & MS_MSG_TSND)
+				update_stat(ms_dumped_msgs, 1);
+			else
+				update_stat(ms_dumped_rmds, 1);
+#endif
+
+			db_keys[n] = &sc_mid;
+			db_vals[n].type = DB_INT;
+			db_vals[n].nul = 0;
+			db_vals[n].val.int_val = p->msgid;
+			LM_DBG("cleaning sent message [%d]\n", p->msgid);
+			n++;
+			if(n==MAX_DEL_KEYS)
+			{
+				if (msilo_dbf.delete(db_con, db_keys, NULL, db_vals, n) < 0) 
+					LM_ERR("failed to clean %d messages.\n",n);
+				n = 0;
+			}
+		}
+		if((p->flag & MS_MSG_ERRO) && (p->flag & MS_MSG_TSND))
+		{ /* set snd time to 0 */
+			ms_reset_stime(p->msgid);
+#ifdef STATISTICS
+			update_stat(ms_failed_rmds, 1);
+#endif
+
+		}
+#ifdef STATISTICS
+		if((p->flag & MS_MSG_ERRO) && !(p->flag & MS_MSG_TSND))
+			update_stat(ms_failed_msgs, 1);
+#endif
+		p = p->next;
+	}
+	if(n>0)
+	{
+		if (msilo_dbf.delete(db_con, db_keys, NULL, db_vals, n) < 0) 
+			LM_ERR("failed to clean %d messages\n", n);
+		n = 0;
+	}
+
+	msg_list_el_free_all(mle);
+	
+	/* cleaning expired messages */
+	if(ticks%(ms_check_time*ms_clean_period)<ms_check_time)
+	{
+		LM_DBG("cleaning expired messages\n");
+		db_keys[0] = &sc_exp_time;
+		db_vals[0].type = DB_INT;
+		db_vals[0].nul = 0;
+		db_vals[0].val.int_val = (int)time(NULL);
+		if (msilo_dbf.delete(db_con, db_keys, db_ops, db_vals, 1) < 0) 
+			LM_DBG("ERROR cleaning expired messages\n");
+	}
+}
+]]>
+...
+		</programlisting>
+		<para>
+			The function deletes from database the messages that were succesfully delivered and the
+			messages that were stored for too long time in database and the recipient was not online
+			or not able to receive them.
+		</para>
+	</section>
+</chapter>

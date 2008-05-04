@@ -1,0 +1,472 @@
+<chapter id="c11pv">
+	<title>Pseudo-variables</title>
+	<para>
+		Why this name? Yes, they are kind of variables, but a bit different:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				some are read-only - most of them are read-only, because they
+				are references inside the original SIP message and that does not change
+				during config file execution (see <emphasis role="strong">Data Lump</emphasis>
+				chapter.)
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				some are array - even if looks as simple variable name, assigning a value means
+				to add one more in an array - the case for $avp(name).
+			</para>
+		</listitem>
+	</itemizedlist>
+	<para>
+		So, they were named pseudo-variable. Initially they were introduced in
+		<emphasis role="strong">xlog</emphasis> module having a simple mechanism behind. There is
+		a marker character ($ in this case) to identify the start of pseudo-variable name from the
+		rest of the text. To a pseudo-variable name was associated a function that returned a string
+		value. That value was replacing the pseudo-variable name in the message printed to syslog.
+	</para>
+	<para>
+		Lately the concept was extended to include AVPs, to have writable pseudo-variables and to
+		be possible to use them directly in the configuration file. Also, some of them can have dynamic
+		name and index.
+	</para>
+	<para>
+		The framework for pseudo-variables is now easy to extend. They can be introduced as core
+		pseudo-variables or exported by modules (this is preferred option). We will show such case
+		further in the document.
+	</para>
+	<section id="c11naming_format">
+		<title>Naming Format</title>
+		<para>
+			The naming format for a pseudo-variable is described in the next example:
+		</para>
+<programlisting  format="linespecific">
+...
+marker classname
+marker '(' classname ')'
+marker '(' classname '[' index ']' ')'
+marker '(' classname ( '{' transformation '}' )+ ')'
+marker '(' classname '[' index ']' ( '{' transformation '}' )+ ')'
+marker classname '(' innername ')'
+marker '(' classname '(' innername ')' ')'
+marker '(' classname '(' innername ')' '[' index ']' ')'
+marker '(' classname '(' innername ')' ( '{' transformation '}' )+ ')'
+marker '(' classname '(' innername ')' '[' index ']' ( '{' transformation '}' )+ ')'
+...
+		</programlisting>
+		<para>
+			Meaning of the tokens:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					marker - it is the char <emphasis role="strong">$</emphasis>
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					classname - a string specifying the class of pseudo-variables. A class can have on
+					pseudo-variable, when the innername is missing. Lot of references to parts of
+					SIP message are single PV class, e.g., <emphasis role="strong">$ru</emphasis>
+					- request URI.
+				</para>
+				<para>
+					Classes with more than one pseudo-variable are AVPs ($avp(name)), references to headers
+					($hdr(name)), script vars ($var(name)) and several others. 
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					innername - the name specifying the pseudo-variable in a class. It can be dynamic
+					(specified by the value of another pseudo-variable), but depends on the pseudo-variable
+					class, it is not valid for all classes.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					index - index in the array, when the pseudo-variable can have multiple values at
+					the same time. Such pseudo-variables are header references and AVPs. Also the index can
+					have dynamic value, up to pseudo-variable class implementation.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					transformation - kind of function that are applied to the value of the pseudo-variable.
+					A dedicated chapter is included in this tutorial.
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			Some examples with pseudo-variable names:
+		</para>
+<programlisting  format="linespecific">
+...
+$ru - reference to request URI
+$(ru) - same as above - this format can be used when the class name cannot be delimited. It must
+        be used if the PV has index or transformations.
+$avp(s:test) - the AVP with the string name 'test'
+$avp(s:test[2]) - the third AVP with the string name 'test'
+...
+		</programlisting>
+	</section>
+	<section id="c11data_structures">
+		<title>Data structures</title>
+		<para>
+			The prototypes and data structures for pseudo-variables are defined in
+			<emphasis role="strong">pvar.h</emphasis>.
+		</para>
+		<section id="c11pv_value_t">
+			<title>Type pv_value_t</title>
+			<para>
+				Is the structure returned by the <emphasis role="strong">get</emphasis> function
+				associated to a pseudo-variable. It includes the flags that describe the value. It
+				can have integer and string value, in most of the case, the string value is all the
+				time set as PV used to be involved in string operations.
+			</para>
+<programlisting  format="linespecific">
+...
+typedef struct _pv_value
+{
+	str rs;    /* string value */
+	int ri;    /* integer value */
+	int flags; /* flags about the type of value */
+} pv_value_t, *pv_value_p;
+
+...
+			</programlisting>
+			<para>
+				The type can be a combination of the following flags:
+			</para>
+			<programlisting  format="linespecific">
+...
+#define PV_VAL_NONE			0    // no actual value -- it is so just at initialization
+#define PV_VAL_NULL			1    // the value must be considered NULL
+#define PV_VAL_EMPTY		2    // the value is an empty string (deprecated)
+#define PV_VAL_STR			4    // the value has the string attribute 'rs' set
+#define PV_VAL_INT			8    // the value has the integer attribute 'ri' set
+#define PV_TYPE_INT			16   // the value may have both string and integer attribute set, but type is integer
+#define PV_VAL_PKG			32   // the value was duplicated in pkg memory, free it accordingly at destroy time
+#define PV_VAL_SHM			64   // the value was duplicated in shm memory, free it accordingly at destroy time
+...
+			</programlisting>
+		</section>
+		<section id="c11pv_name_t">
+			<title>Type pv_name_t</title>
+			<para>
+				The structure to store the specifications for innername. Can be integer or string (e.g.,
+				for AVPs). It can be a pointer to another pseudo-variable specifier or something else,
+				up to implementation.
+			</para>
+<programlisting  format="linespecific">
+...
+typedef struct _pv_name
+{
+	int type;             /* type of name */
+	union {
+		struct {
+			int type;     /* type of int_str name - compatibility with AVPs */
+			int_str name; /* the value of the name */
+		} isname;
+		void *dname;      /* PV value - dynamic name */
+	} u;
+} pv_name_t, *pv_name_p;
+
+...
+			</programlisting>
+			<para>
+				Type can be:
+			</para>
+<programlisting  format="linespecific">
+...
+#define PV_NAME_INTSTR	0 // the name is constant, an integer or string
+#define PV_NAME_PVAR	1 // the name is dynamic, a pseudo-variable
+
+...
+			</programlisting>
+			<para>
+				Type for <emphasis role="strong">isname</emphasis> can be:
+			</para>
+			<programlisting  format="linespecific">
+...
+0                                       // the name is integer
+
+#define AVP_NAME_STR     (1&lt;&lt;0)   // 1 - the name is string
+...
+			</programlisting>
+		</section>
+		<section id="c11pv_index_t">
+			<title>Type pv_index_t</title>
+			<para>
+				The structure holding index specifications.
+			</para>
+			<programlisting  format="linespecific">
+...
+typedef struct _pv_index
+{
+	int type; /* type of PV index */
+	union {
+		int ival;   /* integer value */
+		void *dval; /* PV value - dynamic index */
+	} u;
+} pv_index_t, *pv_index_p;
+
+...
+			</programlisting>
+			<para>
+				Type can be:
+			</para>
+			<programlisting  format="linespecific">
+...
+#define PV_IDX_INT	0  // the index is integer value
+#define PV_IDX_PVAR	1  // the index is dynamic, a pseudo-variable
+#define PV_IDX_ALL	2  // the index specifies to return all values for that pseudo-variables
+                       // - this is up to implementation of pseudo-variable class
+...
+			</programlisting>
+		</section>
+		<section id="c11pv_param_t">
+			<title>Type pv_param_t</title>
+			<para>
+				The structure groups the name and the index to be easy to give them as parameter
+				to the functions that requires them.
+			</para>
+<programlisting  format="linespecific">
+...
+typedef struct _pv_param
+{
+	pv_name_t    pvn; /* PV name */
+	pv_index_t   pvi; /* PV index */
+} pv_param_t, *pv_param_p;
+
+...
+		</programlisting>
+		</section>
+		<section id="c11pv_spec_t">
+			<title>Type pv_spec_t</title>
+			<para>
+				The structure that describes the pseudo-variable - the PV spec. It includes
+				a type of pseudo-variable, the functions to <emphasis role="strong">get</emphasis> and
+				<emphasis role="strong">set</emphasis> the pseudo-variable value, the parameter with
+				name and index specifiers and the list to transformations associated for that specific
+				instance of the pseudo-variable.
+			</para>
+<programlisting  format="linespecific">
+...
+typedef int (*pv_getf_t) (struct sip_msg*,  pv_param_t*, pv_value_t*);
+typedef int (*pv_setf_t) (struct sip_msg*,  pv_param_t*, int, pv_value_t*);
+
+typedef struct _pv_spec {
+	pv_type_t    type;   /* type of PV */
+	pv_getf_t    getf;   /* get PV value function */
+	pv_setf_t    setf;   /* set PV value function */
+	pv_param_t   pvp;    /* parameter to be given to get/set functions */
+	void         *trans; /* transformations */
+} pv_spec_t, *pv_spec_p;
+
+...
+			</programlisting>
+			<para>
+				The types are defined in <emphasis role="strong">pvar.h</emphasis> and are used
+				to detect the type of core variables. Sometime is useful to filter out pseudo-variables,
+				for example when you want to allow only some type as parameter to a function or module,
+				e.g., only AVPs.
+			</para>
+			<para>
+				Such structure resides behind each occurence of a pseudo-variable in configuration file.
+			</para>
+		</section>
+		<section id="c11pv_export_t">
+			<title>Type pv_export_t</title>
+			<para>
+				The structure that one has to fill in order to add a new pseudo-variable. There is an array
+				of such objects in the core, in file <emphasis role="strong">pvar.c</emphasis>, and it
+				is possible to export such structure with the module interface.
+			</para>
+<programlisting  format="linespecific">
+...
+typedef int (*pv_parse_name_f)(pv_spec_p sp, str *in);
+typedef int (*pv_parse_index_f)(pv_spec_p sp, str *in);
+typedef int (*pv_init_param_f)(pv_spec_p sp, int param);
+
+typedef struct _pv_export {
+	str name;                      /* class name of PV */
+	pv_type_t type;                /* type of PV */
+	pv_getf_t  getf;               /* function to get the value */
+	pv_setf_t  setf;               /* function to set the value */
+	pv_parse_name_f parse_name;    /* function to parse the inner name */
+	pv_parse_index_f parse_index;  /* function to parse the index of PV */
+	pv_init_param_f init_param;    /* function to init the PV spec */
+	int iparam;                    /* parameter for the init function */
+} pv_export_t;
+
+...
+			</programlisting>
+			<para>
+				Practically, to add the pseudo-variable you have to give the classname and 
+				implement the functions to:
+			</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+						get the value of the pseudo-variable (required)
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						set the value of the pseudo-variable (optional)
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						parse the inner name (optional)
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						parse the index (optional)
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						initialize the pseudo-variable spec (optional)
+					</para>
+				</listitem>
+			</itemizedlist>
+			<para>
+				The optional attributes can be left NULL. <emphasis role="strong">iparam</emphasis>
+				is used together with function <emphasis role="strong">init_param</emphasis>.
+			</para>
+		</section>
+	</section>
+	<section id="c11adding_pv">
+		<title>Adding a pseudo-variables</title>
+		<para>
+			We will show how to add a simple pseudo-variable in the core, later will show how to add
+			a pseudo-variable with a inner name via module interface. <emphasis role="strong">$ru</emphasis>
+			(request URI) is taken as example. This pseudo-variable is read/write, so we have to implement
+			the <emphasis role="strong">get</emphasis> and <emphasis role="strong">set</emphasis>
+			functions. These are in file <emphasis role="strong">pvar.c</emphasis>.
+		</para>
+		<programlisting  format="linespecific">
+...
+static int pv_get_ruri(struct sip_msg *msg, pv_param_t *param,
+		pv_value_t *res)
+{
+	if(msg==NULL || res==NULL)
+		return -1;
+
+	if(msg->first_line.type == SIP_REPLY)	/* REPLY doesnt have a ruri */
+		return pv_get_null(msg, param, res);
+
+	if(msg->parsed_uri_ok==0 /* R-URI not parsed*/ &amp;&amp; parse_sip_msg_uri(msg)&lt;0)
+	{
+		LM_ERR("failed to parse the R-URI\n");
+		return pv_get_null(msg, param, res);
+	}
+	
+	if (msg->new_uri.s!=NULL)
+		return pv_get_strval(msg, param, res, &amp;msg-&gt;new_uri);
+	return pv_get_strval(msg, param, res, &amp;msg-&gt;first_line.u.request.uri);
+}
+...
+int pv_set_ruri(struct sip_msg* msg, pv_param_t *param,
+		int op, pv_value_t *val)
+{
+	struct action  act;
+	char backup;
+
+	if(msg==NULL || param==NULL || val==NULL)
+	{
+		LM_ERR("bad parameters\n");
+		return -1;
+	}
+
+	if(!(val->flags&amp;PV_VAL_STR))
+	{
+		LM_ERR("str value required to set R-URI\n");
+		goto error;
+	}
+	
+	memset(&amp;act, 0, sizeof(act));
+	act.elem[0].type = STRING_ST;
+	act.elem[0].u.string = val-&gt;rs.s;
+	backup = val-&gt;rs.s[val-&gt;rs.len];
+	val-&gt;rs.s[val-&gt;rs.len] = '\0';
+	act.type = SET_URI_T;
+	if (do_action(&amp;act, msg)&lt;0)
+	{
+		LM_ERR("do action failed\n");
+		val->rs.s[val-&gt;rs.len] = backup;
+		goto error;
+	}
+	val->rs.s[val-&gt;rs.len] = backup;
+
+	return 0;
+error:
+	return -1;
+}
+...
+		</programlisting>
+		<para>
+			The parameters to the functions are:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					msg - the SIP message currenty processed
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					param - the param field from PV spec structure
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					op - the assign operation for <emphasis role="strong">set</emphasis> function
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					value - pointer to a pv_value_t structure. It is out parameter for
+					<emphasis role="strong">get</emphasis> function and in parameter for
+					<emphasis role="strong">set</emphasis> function.
+				</para>
+			</listitem>
+		</itemizedlist>
+		<para>
+			The functions return <emphasis role="strong">0</emphasis> in case of success and
+			&lt;0 in case of error.
+		</para>
+		<para>
+			In the <emphasis role="strong">get</emphasis> function, it checks whether there is a new 
+			request URI values and return that. If not, returns the URI from the original SIP message.
+			It takes care that the URI is parsed, so it is valid.
+		</para>
+		<para>
+			In the <emphasis role="strong">set</emphasis> function, it checks to be sure that the value
+			to assign is a string, and then calls the internal SET_URI_T action.
+		</para>
+		<para>
+			The last step is to add the proper entry in the pseudo-variables table (see
+			<emphasis role="strong">pvar.c</emphasis>) -- remember that this is required only for
+			pseudo-variables included in core, not for the ones exported by modules.
+		</para>
+<programlisting  format="linespecific">
+...
+static pv_export_t _pv_names_table[] = {
+...
+	{{"ruri", (sizeof("ruri")-1)}, /* */
+		PVT_RURI, pv_get_ruri, pv_set_ruri,
+		0, 0, 0, 0},
+...
+	{{0,0}, 0, 0, 0, 0, 0, 0, 0}
+};
+...
+		</programlisting>
+		<para>
+			... and do not forget to document in the <emphasis role="strong">Pseudo-Variable Cookbok</emphasis>.
+		</para>
+	</section>
+</chapter>

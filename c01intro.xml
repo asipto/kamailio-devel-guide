@@ -1,0 +1,83 @@
+<chapter id="c01intro">
+	<title>Introduction</title>
+
+	<section id="c01osss">
+		<title>&openser; SIP Server</title>
+		<para>
+			In June 2005, &openser; was born as a split from SIP Express Router project of FhG FOKUS
+			Institute, Berlin, Germany. The newly created project was aiming to create an open
+			development environment to build robust and scalable open source SIP server.
+		</para>
+		<para>
+			The website of the project is <ulink url="http://wwww.openser.org">http://www.openser.org</ulink>.
+			The source code is hosted on <ulink url="http://sourceforge.net">sourceforge.net</ulink> SVN
+			repository.
+		</para>
+		<para>
+			Today &openser; SIP Server is a reference implementation, featuring hundreds of VoIP services
+			world wide, being developed by people around the world. It is included in official distributions
+			of several Linux and BSD flavors.
+		</para>
+		<para>
+			The number of registered developers and packagers exceeded 25. The level of contributions and the 
+			amount of contributors has an important impact on the evolution of the project. The book tries
+			to ease the understanding of &openser; from a developer point of view, giving the kick start
+			knowledge, it does not intend to be a cookbook. Efforts to improve the documentation in the 
+			sources is undertaken and make it <emphasis role="strong">doxygen</emphasis> compliant, making
+			a good developer documentation out of there.
+		</para>
+	</section>
+
+	<section id="c01ata">
+		<title>About the authors</title>
+		<para>
+			<emphasis role="bold">Daniel-Constantin Mierla</emphasis> is one of the co-founders of
+			&openser; SIP Server project. He is involved in VoIP and SIP since beginning of 2002,
+			at FhG FOKUS Institute, Berlin, Germany, being involved as core developer in the
+			SIP Express Router project. Currently he is employed by
+			<ulink url="http://www.asipto.com">ASIPTO</ulink>, an &openser;-focused
+			company. Daniel is an active OPENSER developer and member of management board.
+		</para>
+		<para>
+			<emphasis role="bold">Elena-Ramona Modroiu</emphasis> is one of the co-founder of 
+			&openser; SIP Server project. She got involved in VoIP and SIP while working at her
+			graduation thesis within SIP Express Router project at FhG FOKUS Institute. She completed
+			studies at Polytechnic University of Valencia and Siemens Germany, working now at
+			<ulink url="http://www.asipto.com">ASIPTO</ulink>,
+			being an active developer and member of management board of &openser;.
+		</para>
+		<para>
+			The two authored many online tutorials about &openser; that include <emphasis>&openser;
+				Core Cookbook</emphasis>, <emphasis>&openser; Transformations</emphasis>,
+			<emphasis>&openser; Pseudo-variables</emphasis>, <emphasis>&openser; and Asterisk Integration</emphasis>,
+			<emphasis>&openser; and FreeRADIUS</emphasis>.
+		</para>
+	</section>
+
+	<section id="c01important">
+		<title>Important</title>
+		<para>
+			This document is focusing only to &openser; specific API, has no intention to teach
+			C programing for Linux and Networking. You, as a reader, should have already the
+			basic knowledge of C programming.
+		</para>
+		<para>
+			Do not contact the authors to ask about standard C functions or variables.
+		</para>
+		<para>
+			There are many references to parts of code in the source tree. You must be familiar
+			with the directory structure of &openser;. It is not our intention to explain how
+			something was implemented, but how to use existing code to extend &openser; easily.
+		</para>
+		<para>
+			The source code remains the best reference for developers. In the last time, the comments
+			around the important functions in &openser; have been improved and converted to
+			<emphasis role="strong">doxygen</emphasis> format. You should double-check the source
+			code if the prototype of the functions presented in this document are still valid.
+		</para>
+		<para>
+			Daily updated <emphasis role="strong">doxygen</emphasis> documentation is available at
+			<ulink url="http://devel.openser.org/doxygen/">http://devel.openser.org/doxygen/</ulink>.
+		</para>
+	</section>
+</chapter>

@@ -1,0 +1,43 @@
+<chapter id="c17licesing">
+	<title>Licensing</title>
+	<para>
+		&openser; is licensed under GPL. New development to be introduced in the public repository should have GPL license.
+		The copyright for major developments is developer's choice, either the developer, the company is working for or
+		someone else.
+	</para>
+	<para>
+		If the code includes parts having other license make sure it is compatible with the GPL and the way it is used now
+		does not violate the original license and the copyright.
+	</para>
+	<para>
+		Each C source file includes a header as follows:
+	</para>
+	<programlisting  format="linespecific">
+...
+/*
+ * $Id$
+ *
+ * Copyright (C) YEARS OWNER
+ *
+ * This file is part of openser, a free SIP server.
+ *
+ * openser is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version
+ *
+ * openser is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+...
+	</programlisting>
+	<para>
+		YEARS and OWNER to be replaced appropriately.
+	</para>
+</chapter>

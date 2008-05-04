@@ -1,0 +1,46 @@
+<!-- $Id$ -->
+
+<!-- Entities often used in the documentation -->
+
+<!ENTITY company "ASIPTO">
+<!ENTITY companyweb "<ulink url='http://www.asipto.com'>www.asipto.com</ulink>">
+<!ENTITY openser "OPENSER">
+<!ENTITY opensername "Open SIP Express Router">
+
+<!ENTITY openserhome "http://www.openser.org">
+<!ENTITY openserbugs "http://www.openser.org">
+<!ENTITY openserhelp "http://lists.openser.org/cgi-bin/mailman/listinfo/team">
+<!ENTITY openserusers "http://lists.openser.org/cgi-bin/mailman/listinfo/users">
+<!ENTITY openserdev "http://lists.openser.org/cgi-bin/mailman/listinfo/devel">
+
+<!ENTITY openserhomelink "<ulink url='&openserhome;'>&openserhome;</ulink>">
+<!ENTITY openserbugslink "<ulink url='&openserbugs;'>&openserbugs;</ulink>">
+<!ENTITY openserhelplink "<ulink url='&openserhelp;'>&openserhelp;</ulink>">
+<!ENTITY openseruserslink "<ulink url='&openserusers;'>&openserusers;</ulink>">
+<!ENTITY openserdevlink "<ulink url='&openserdev;'>&openserdev;</ulink>">
+
+<!ENTITY openserhelpmail "<email>team@openser.org</email>">
+<!ENTITY openserusersmail "<email>users@openser.org</email>">
+<!ENTITY openserdevmail "<email>devel@openser.org</email>">
+
+<!-- Often used acronyms -->
+
+<!ENTITY sip "<acronym>SIP</acronym>">
+<!ENTITY sdp "<acronym>SDP</acronym>">
+<!ENTITY rtp "<acronym>RTP</acronym>">
+<!ENTITY pstn "<acronym>PSTN</acronym>">
+<!ENTITY http "<acronym>HTTP</acronym>">
+<!ENTITY uri "<acronym>URI</acronym>">
+<!ENTITY url "<acronym>URL</acronym>">
+<!ENTITY uac "<acronym>UAC</acronym>">
+<!ENTITY uas "<acronym>UAS</acronym>">
+<!ENTITY ua "<acronym>UA</acronym>">
+<!ENTITY nat "<acronym>NAT</acronym>">
+<!ENTITY ip "<acronym>IP</acronym>">
+<!ENTITY udp "<acronym>UDP</acronym>">
+<!ENTITY ietf "<ulink url='http://www.ietf.org'>IETF</ulink>">
+<!ENTITY im "<acronym>IM</acronym>">
+<!ENTITY smtp "<acronym>SMTP</acronym>">
+<!ENTITY gnu "<ulink url='http://www.gnu.org'>GNU</ulink>">
+<!ENTITY gpl "<ulink url='http://www.gnu.org/licenses/licenses.html#GPL'>GPL</ulink>">
+
