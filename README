@@ -18,3 +18,11 @@ The book is written in DocBook XML format. It is important that you specify an u
 
 There is a Makefile that helps generating the HTML format -- just type 'make'. You need xsltproc and DocBook XSL files. A file named 'openser-devel-guide.html' is generated in same directory.
 
+4. Reporting Bugs and Patches
+-----------------------------
+
+Bugs and patches can be submitted to OPENSER Documentation tracker:
+http://sourceforge.net/tracker/?atid=782960&group_id=139143
+
+or to devel@lists.openser.org
+
