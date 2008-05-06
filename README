@@ -4,19 +4,28 @@ OPENSER Devel Guide
 1. Structure
 ------------
 
-The guide is structured in chapters. Each chapter name starts with cXY, where the XY is a number that ensures the same order on the file system as it is in the book.
+The guide is structured in chapters. Each chapter name starts with cXY, where
+the XY is a number that ensures the same order on the file system as it is in
+the book.
 
-To add an intermediate chapter, please use cXYZ to add it in between cXY and cXY+1. First digit to be used as Z is 5 to allow space for including new chapters before or after.
+To add an intermediate chapter, please use cXYZ to add it in between cXY and
+cXY+1. The first digit to be used as Z is 5 to allow space for including new
+chapters before or after.
 
 2. Writing
 ----------
 
-The book is written in DocBook XML format. It is important that you specify an unique ID for chapters, sections and examples, so that the links are persistent over updates. The format of the ID is cXYid (where cXY is from the file name, id is something related to section name).
+The book is written in DocBook XML format. It is important that you specify
+an unique ID for chapters, sections and examples, so that the links are
+persistent over updates. The format of the ID is cXYid (where cXY is from
+the file name, id is something related to section name).
 
 3. Output
 ---------
 
-There is a Makefile that helps generating the HTML format -- just type 'make'. You need xsltproc and DocBook XSL files. A file named 'openser-devel-guide.html' is generated in same directory.
+There is a Makefile that helps generating the HTML format -- just type 'make'.
+You need xsltproc and DocBook XSL files. A file named 
+'openser-devel-guide.html' is generated in the same directory.
 
 4. Reporting Bugs and Patches
 -----------------------------
