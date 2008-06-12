@@ -47,7 +47,7 @@ gen_lock_t lock;
 			<title>lock_alloc(...)</title>
 			<para>
 				Allocates a lock in shared memory. If your <emphasis role="strong">gen_lock_t</emphasis>
-				is not part of a structure allocated in share memory, you have to use this function to
+				is not part of a structure allocated in shared memory, you have to use this function to
 				properly create the lock.
 			</para>
 			<example id="c03p_lock_alloc">
@@ -59,7 +59,7 @@ gen_lock_t* lock_alloc();
 				</programlisting>
 			</example>
 			<para>
-				It returns the pointer to share memory structure.
+				It returns the pointer to a shared memory structure.
 			</para>
 			<example id="c03ex_lock_alloc">
 				<title>Example of usage</title>
@@ -117,7 +117,7 @@ lock_dealloc(lock);
 		<section id="c03lock_init">
 			<title>lock_init(...)</title>
 			<para>
-				Initialize the lock. You must call this function before fist set operation on the lock.
+				Initialize the lock. You must call this function before the first set operation on the lock.
 			</para>
 			<example id="c03p_lock_init">
 				<title>Prototype</title>
@@ -254,7 +254,7 @@ lock_dealloc(lock);
 			<para>
 				Perform unset operation on a lock. If the lock is set, it will unblock it. You
 				should call it after <emphasis role="strong">lock_set(...)</emphasis>, after finishing
-				the operations that need synchronization and racing protection.
+				the operations that needs synchronization and protection against race conditions.
 			</para>
 			<example id="c03p_lock_release">
 				<title>Prototype</title>
@@ -621,7 +621,7 @@ lock_set_dealloc(set);
 		<para>
 			From the backtrace you should get to the lock that is set and not released. From there you should
 			start the investigation - what are the cases to set that lock and in which circumstances it does not
-			get unset.
+			get released.
 		</para>
 	</section>
 

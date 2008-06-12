@@ -1,8 +1,8 @@
 <chapter id="c04memory">
 	<title>Memory Manager</title>
 	<para>
-		&openser; is a multi-process application, usage of shared memory is
-		required many times. The memory manager tries to simplify the work with
+		As &openser; is a multi-process application, the usage of shared memory is
+		required in many scenarios. The memory manager tries to simplify the work with
 		shared and private memory, providing a very simple programming interface.
 		The internal design took in consideration speed optimizations, something
 		very important for a real-time communication server.
@@ -13,12 +13,12 @@
 		configuration parsing, that includes the setting of module parameters.
 	</para>
 	<para>
-		When the own memory manager cannot be used, &openser; falls back to SysV shared
+		When the own memory manager cannot be used, &openser; falls back to the SysV shared
 		memory system.
 	</para>
 	<para>
 		Shortly, the manager reserves a big chunk of system memory for itself at start-up,
-		then it allocates parts inside the chunk.
+		then it allocates parts inside the chunk as visible in the following figure.
 	</para>
 	<figure>
 		<title>&openser; Memory Management</title>
@@ -121,7 +121,7 @@ pkg_free(p);
 			<para>
 				Realloc a previously allocated memory chunk. It copies the content of the old
 				memory chunk to the new one. If the space after the old chunk is free and large enough
-				to scale to the new size, &openser; memory manager will set the size of the old chunk
+				to scale to the new size, the &openser; memory manager will set the size of the old chunk
 				to the new size, marking properly the memory zone, in this way, the copy operation
 				is skipped.
 			</para>
@@ -173,8 +173,8 @@ pkg_free(p);
 		<title>Shared Memory</title>
 		<para>
 			The data stored in shared memory is visible in all &openser; modules. It is the space
-			where are stored user location records, the TM structures for stateful processing, routing
-			rules for dispatcher or lcr module, and many more.
+			where user location records are stored, the TM structures for stateful processing, routing
+			rules for the dispatcher or the lcr module, and many more.
 		</para>
 		<para>
 			The shared memory is initialized after the config file is parsed, because it need to know
@@ -182,9 +182,10 @@ pkg_free(p);
 			operations.
 		</para>
 		<para>
-			To use share memory functions in your C code you need to include the file:
-			<emphasis role="strong">mem/shm_mem.h</emphasis>. When accessing share memory data, you make sure
-			don't have a race between &openser; processes or protect via a lock.
+			To use shared memory functions in your C code you need to include the file:
+			<emphasis role="strong">mem/shm_mem.h</emphasis>. When accessing shared memory data, you
+			need to make sure that you don't have a race between different &openser; processes, 
+			for example protect the access via a lock.
 		</para>
 		<section id="c04shm_malloc">
 			<title>shm_malloc(...)</title>
@@ -315,16 +316,16 @@ shm_free(p);
 		<itemizedlist>
 			<listitem>
 				<para>
-					memory leak - allocating memory at runtime and don't free when no longer needing. It
+					memory leak - allocating memory at runtime and don't free it when no longer needing. It
 					results in <emphasis role="strong">out of memory</emphasis> messages. Note that such
-					messages might be because of too small size of the memory for the traffic, data or number
-					of subscribers &openser; has to handle.
+					messages might be because of a too small size of the memory for the traffic, data or number
+					of subscribers that &openser; has to handle.
 				</para>
 			</listitem>
 			<listitem>
 				<para>
 					memory overwriting - writing more than was allocated for that structure. It results in
-					<emphasis role="strong">segmentation fault</emphasis>, crashing &openser;.
+					an <emphasis role="strong">segmentation fault</emphasis>, crashing &openser;.
 				</para>
 			</listitem>
 		</itemizedlist>
@@ -342,9 +343,9 @@ shm_free(p);
 		</para>
 		<para>
 			Once compiled and installed with memory debugging you have to set <emphasis role="strong">memlog</emphasis>
-			to a value lower than <emphasis role="strong">debug</emphasis> in configuration file. You can start 
-			&openser; and try to reproduce the errors again. Once memory leak errors are printed you can either
-			issue a <emphasis role="strong">signal USR1</emphasis> to the process that printed the messages
+			parameter to a value lower than <emphasis role="strong">debug</emphasis> in configuration file. You can
+			start &openser; and try to reproduce the errors again. Once memory leak errors are printed you can either
+			send a <emphasis role="strong">signal USR1</emphasis> to the process that printed the messages
 			or stop &openser;. You get in the syslog file the status of the memory. If you see memory allocation
 			done from the same place in the sources, many times, at runtime, it is a memory leak. If not, increase
 			the memory size to fit your load needs and run again -- if you don't get the memory leak errors it was
