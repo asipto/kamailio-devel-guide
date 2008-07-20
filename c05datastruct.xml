@@ -42,7 +42,7 @@ typedef struct _str str;
 ...
 str s;
 s.s = "openser";
-s.len = strlen(s.len);
+s.len = strlen(s.s);
 LM_DBG("the string is [%.*s]\n", s.len, s.s);
 ...
 			</programlisting>
