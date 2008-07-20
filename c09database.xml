@@ -967,7 +967,7 @@ int db_example(char *db_url)
 	str table;
 	str col_a;
 	str col_b;
-	int nr_keys;
+	int nr_keys=0;
 	db_key_t db_keys[1];
 	db_val_t db_vals[1];
 	db_key_t db_cols[1];
@@ -1009,6 +1009,7 @@ int db_example(char *db_url)
 	db_vals[nr_keys].type = DB_INT;
 	db_vals[nr_keys].nul = 0;
 	db_vals[nr_keys].val.int_val = 1;
+	nr_keys++;
 
 	/* execute the query */
 	/* -- select b from test where a=1 */
