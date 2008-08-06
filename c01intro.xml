@@ -4,12 +4,14 @@
 	<section id="c01osss">
 		<title>&openser; SIP Server</title>
 		<para>
-			In June 2005, &openser; was born as a split from SIP Express Router project of FhG FOKUS
-			Institute, Berlin, Germany. The newly created project was aiming to create an open
-			development environment to build robust and scalable open source SIP server.
+			July 28, 2008, the project name changed from OPENSER to KAMAILIO.
+			In June 2005, &openser; was born as a
+			split from SIP Express Router project of FhG FOKUS Institute, Berlin, Germany.
+			The newly created project was aiming to create an open development environment to 
+			build robust and scalable open source SIP server.
 		</para>
 		<para>
-			The website of the project is <ulink url="http://wwww.openser.org">http://www.openser.org</ulink>.
+			The website of the project is <ulink url="http://wwww.kamailio.org">http://www.kamailio.org</ulink>.
 			The source code is hosted on <ulink url="http://sourceforge.net">sourceforge.net</ulink> SVN
 			repository.
 		</para>

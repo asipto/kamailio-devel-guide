@@ -1,4 +1,4 @@
-OPENSER Devel Guide
+KAMAILIO (OPENSER) Devel Guide
 ===================
 
 1. Structure
@@ -30,8 +30,8 @@ You need xsltproc and DocBook XSL files. A file named
 4. Reporting Bugs and Patches
 -----------------------------
 
-Bugs and patches can be submitted to OPENSER Documentation tracker:
+Bugs and patches can be submitted to KAMAILIO (OPENSER) Documentation tracker:
 http://sourceforge.net/tracker/?atid=782960&group_id=139143
 
-or to devel@lists.openser.org
+or to devel@lists.kamailio.org
 

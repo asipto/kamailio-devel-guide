@@ -4,14 +4,14 @@
 
 <!ENTITY company "ASIPTO">
 <!ENTITY companyweb "<ulink url='http://www.asipto.com'>www.asipto.com</ulink>">
-<!ENTITY openser "OPENSER">
-<!ENTITY opensername "Open SIP Express Router">
+<!ENTITY openser "KAMAILIO (OPENSER)">
+<!ENTITY opensername "KAMAILIO (OPENSER)">
 
-<!ENTITY openserhome "http://www.openser.org">
-<!ENTITY openserbugs "http://www.openser.org">
-<!ENTITY openserhelp "http://lists.openser.org/cgi-bin/mailman/listinfo/team">
-<!ENTITY openserusers "http://lists.openser.org/cgi-bin/mailman/listinfo/users">
-<!ENTITY openserdev "http://lists.openser.org/cgi-bin/mailman/listinfo/devel">
+<!ENTITY openserhome "http://www.kamailio.org">
+<!ENTITY openserbugs "http://www.kamailio.org">
+<!ENTITY openserhelp "http://lists.kamailio.org/cgi-bin/mailman/listinfo/team">
+<!ENTITY openserusers "http://lists.kamailio.org/cgi-bin/mailman/listinfo/users">
+<!ENTITY openserdev "http://lists.kamailio.org/cgi-bin/mailman/listinfo/devel">
 
 <!ENTITY openserhomelink "<ulink url='&openserhome;'>&openserhome;</ulink>">
 <!ENTITY openserbugslink "<ulink url='&openserbugs;'>&openserbugs;</ulink>">
@@ -19,9 +19,9 @@
 <!ENTITY openseruserslink "<ulink url='&openserusers;'>&openserusers;</ulink>">
 <!ENTITY openserdevlink "<ulink url='&openserdev;'>&openserdev;</ulink>">
 
-<!ENTITY openserhelpmail "<email>team@openser.org</email>">
-<!ENTITY openserusersmail "<email>users@openser.org</email>">
-<!ENTITY openserdevmail "<email>devel@openser.org</email>">
+<!ENTITY openserhelpmail "<email>devel@lists.kamailio.org</email>">
+<!ENTITY openserusersmail "<email>users@kamailio.org</email>">
+<!ENTITY openserdevmail "<email>devel@kamailio.org</email>">
 
 <!-- Often used acronyms -->
 

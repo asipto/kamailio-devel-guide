@@ -28,11 +28,11 @@
 
 <book>
     <bookinfo>
-	<title>OPENSER Devel Guide</title>
-	<titleabbrev>OPENSER Devel Guide</titleabbrev>
+	<title>KAMAILIO (OPENSER) Devel Guide</title>
+	<titleabbrev>KAMAILIO (OPENSER) Devel Guide</titleabbrev>
 	<abstract>
 		<para>
-			This book documents the internal architecture of OPENSER SIP
+			This book documents the internal architecture of KAMAILIO (OPENSER) SIP
 			Server, providing the details useful to develop extensions in the
 			core or as a module.
 		</para>
@@ -49,7 +49,7 @@
 			stable. The document will be timely updated accordingly, check for
 			updates at
 			<ulink url="http://www.asipto.com">www.asipto.com</ulink> or
-			<ulink url="http://www.openser.org">www.openser.org</ulink>.
+			<ulink url="http://www.kamailio.org">www.kamailio.org</ulink>.
 		</para>
 		<para>
 			This document is free to use for anybody. The authors are not
