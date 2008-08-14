@@ -5,8 +5,8 @@
 	<itemizedlist>
 		<listitem>
 			<para>
-				&openser; Home Page - <ulink url="http://www.openser.org">
-					http://www.openser.org</ulink>
+				&openser; Home Page - <ulink url="http://www.kamailio.net">
+					http://www.kamailio.net</ulink>
 			</para>
 		</listitem>
 		<listitem>
@@ -17,36 +17,36 @@
 		</listitem>
 		<listitem>
 			<para>
-				&openser; Dokuwiki Page  - <ulink url="http://www.openser.org/dokuwiki">
+				&openser; Dokuwiki Page  - <ulink url="http://www.kamailio.net/dokuwiki">
 					http://www.openser.org/dokuwiki</ulink>
 			</para>
 		</listitem>
 		<listitem>
 			<para>
 				&openser; Documentation Repository - 
-				<ulink url="http://www.openser.org/mos/view/OpenSER-Documentation-Repository">
-				http://www.openser.org/mos/view/OpenSER-Documentation-Repository</ulink>
+				<ulink url="http://www.kamailio.net/mos/view/OpenSER-Documentation-Repository">
+				http://www.kamailio.net/mos/view/OpenSER-Documentation-Repository</ulink>
 			</para>
 		</listitem>
 		<listitem>
 			<para>
 				&openser; Modules Documentation - 
-				<ulink url="http://www.openser.org/docs/modules">
-				http://www.openser.org/docs/modules</ulink>
+				<ulink url="http://www.kamailio.net/docs/modules">
+				http://www.kamailio.net/docs/modules</ulink>
 			</para>
 		</listitem>
 		<listitem>
 			<para>
 				&openser; Core CookBbook- 
-				<ulink url="http://openser.org/dokuwiki/doku.php/core-cookbook:devel">
-				http://openser.org/dokuwiki/doku.php/core-cookbook:devel</ulink>
+				<ulink url="http://kamailio.net/dokuwiki/doku.php/core-cookbook:devel">
+				http://kamailio.net/dokuwiki/doku.php/core-cookbook:devel</ulink>
 			</para>
 		</listitem>
 		<listitem>
 			<para>
 				&openser; and Asterisk Realtime Integration - 
-				<ulink url="http://openser.org/dokuwiki/doku.php/asterisk:realtime-integration">
-				http://openser.org/dokuwiki/doku.php/asterisk:realtime-integration</ulink>
+				<ulink url="http://kamailio.net/dokuwiki/doku.php/asterisk:realtime-integration">
+				http://kamailio.net/dokuwiki/doku.php/asterisk:realtime-integration</ulink>
 			</para>
 		</listitem>
 		<listitem>
@@ -65,14 +65,14 @@
 		</listitem>
 		<listitem>
 			<para>
-				&openser; Users Mailing List - <ulink url="http://lists.openser.org/pipermail/users">
-				http://lists.openser.org/pipermail/users/</ulink>
+				&openser; Users Mailing List - <ulink url="http://lists.kamailio.net/pipermail/users">
+				http://lists.kamailio.net/pipermail/users/</ulink>
 			</para>
 		</listitem>
 		<listitem>
 			<para>
-				&openser; Devel Mailing List - <ulink url="http://lists.openser.org/pipermail/devel">
-				http://lists.openser.org/pipermail/devel</ulink>
+				&openser; Devel Mailing List - <ulink url="http://lists.kamailio.net/pipermail/devel">
+				http://lists.kamailio.net/pipermail/devel</ulink>
 			</para>
 		</listitem>
 
