@@ -2,7 +2,8 @@
 	<title>Timer</title>
 	<para>
 		&openser; provides an internal timer that ticks every 100 milliseconds. The step can be
-		changed at compile time. It offers developer API to:
+		changed at compile time in the config.h file, its called UTIMER_TICK. It offers developer
+		an API to:
 	</para>
 	<itemizedlist>
 		<listitem>
