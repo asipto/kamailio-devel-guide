@@ -2,7 +2,7 @@
 #
 SRCXML=devel-guide.xml
 SRCFNAME=devel-guide
-OUTFNAME=openser-devel-guide
+OUTFNAME=kamailio-devel-guide
 
 ifeq ($(DBXML2HTML),)
 DBXML2HTML = $(shell which xsltproc)
