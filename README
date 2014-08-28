@@ -25,13 +25,11 @@ the file name, id is something related to section name).
 
 There is a Makefile that helps generating the HTML format -- just type 'make'.
 You need xsltproc and DocBook XSL files. A file named 
-'openser-devel-guide.html' is generated in the same directory.
+'kamailio-devel-guide.html' is generated in the same directory.
 
 4. Reporting Bugs and Patches
 -----------------------------
 
-Bugs and patches can be submitted to KAMAILIO (OPENSER) Documentation tracker:
-http://sourceforge.net/tracker/?atid=782960&group_id=139143
-
-or to devel@lists.kamailio.org
+Bugs and patches can be submitted via Issues or Pull Request on GitHub, or 
+by email to sr-dev@lists.sip-router.org
 
