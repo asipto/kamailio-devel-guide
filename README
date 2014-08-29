@@ -27,9 +27,14 @@ There is a Makefile that helps generating the HTML format -- just type 'make'.
 You need xsltproc and DocBook XSL files. A file named 
 'kamailio-devel-guide.html' is generated in the same directory.
 
+The HTML output can be browsed online at:
+  * http://www.asipto.com/pub/kamailio-devel-guide/
+
 4. Reporting Bugs and Patches
 -----------------------------
 
-Bugs and patches can be submitted via Issues or Pull Request on GitHub, or 
-by email to sr-dev@lists.sip-router.org
+Bugs and patches can be submitted via Issues or Pull Request on GitHub at:
+  * https://github.com/asipto/kamailio-devel-guide
+
+Or by email to sr-dev@lists.sip-router.org .
 
