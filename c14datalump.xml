@@ -2,7 +2,7 @@
 	<title>Data Lumps</title>
 	<para>
 		A topic that won't be involved very much in the development of new features, but important
-		to understand as it is one of the most discussed issues related to &openser;.
+		to understand as it is one of the most discussed issues related to &kamailio;.
 	</para>
 	<para>
 		Many are surprised to discover that even they remove a header from the original SIP message,
@@ -16,6 +16,10 @@
 		(like in diff/patch tools from Unix/Linux systems) and putting it in the list. The diffs
 		are applied after the configuration file is executed, before sending the SIP message further
 		to the network.
+	</para>
+	<para>
+		Note that in config of &kamailio; 3.x, you can use msg_apply_changes() exported by textopsx
+		module to apply immediately the changes done to the content of the SIP message.
 	</para>
 	<para>
 		There are two types of diff operations:

@@ -1,0 +1,97 @@
+<chapter id="c17libdev">
+	<title>Internal Library Development</title>
+	<para>
+		Starting with v3.0, &kamailio; has support for internal libraries. They are collection
+		of C functions to be used by many modules, but not having a general purpose for SIP
+		server in order to be included in core.
+	</para>
+	<para>
+		An internal library is automatically loaded at runtime if there is a module in config file that
+		requires code from it
+	</para>
+	<para>
+		Among benefits of internal libraries:
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				core is smaller - more suitable for embedded devices, as well as it is more stable
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				overall footprint is smaller - duplicated code in several modules can be collected in
+				an internal library
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				development flexibility - code offering same functionality by a different implementation
+				can co-exist, allowing to switch and test which one is better, without adding/removing
+				code from code or modules
+			</para>
+		</listitem>
+	</itemizedlist>
+	<section id="c17t_location">
+		<title>Library Location</title>
+		<para>
+			The library has to be added as a sub-directory of <emphasis role="strong">lib/</emphasis> folder.
+			For example the <emphasis role="strong">trie</emphasis> library is located
+			in <emphasis role="strong">lib/trie/</emphasis>.
+		<para>
+		</para>
+			When adding a new internal library, simply create
+			a folder for it and place the Makefile, source code and header files inside it.
+		</para>
+	</section>
+	<section id="c17t_makefile">
+		<title>Library Makefile</title>
+		<para>
+			The Makefile for internal library specify name, version and external dependencies for it.
+		</para>
+		<programlisting  format="linespecific">
+...
+include ../../Makefile.defs
+auto_gen=
+NAME:=trie
+MAJOR_VER=1
+MINOR_VER=0
+BUGFIX_VER=0
+LIBS=
+
+include ../../Makefile.libs
+...
+		</programlisting>
+		<para>
+			The above example is from trie library, which will result on Linux in an object file libtrie.1.0.0.so.
+		</para>
+		<para>
+			Other Makefile variables such as DEFS or SER_LIBS can be used for libraries in the same manner as for
+			modules. For example, an internal library can depend on another internal library - simply add the
+			dependency to SER_LIBS variable.
+		</para>
+	</section>
+	<section id="c17t_sourcecode">
+		<title>Library Source Code</title>
+		<para>
+			The source code and headers have to be placed in files inside library's directory. There is no
+			real restriction of what you can have inside, besides valid C code. however, it is recommended
+			to use a naming pattern for C functions and global variables that will reduce the risk of naming
+			conflicts.
+		</para>
+		<para>
+			A good practice is to declare only static global variables and export functions that give access
+			(read/write) to them. Exported functions (non-static functions) should be prefixed by a token
+			that tries to suggest the library and build an unique name. If you look inside trie library, the
+			<emphasis role="strong">lib/tree/dtree.c</emphasis> file, all the functions are prefixed with
+			<emphasis role="strong">dtree_</emphasis>.
+		</para>
+		<para>
+			To use a library, include the files with the prototypes of the functions that you need in your
+			module and then use them where you need. In the <emphasis role="strong">Makefile</emphasis> of the
+			module, you have to add the dependency on the respective library by setting accordingly the
+			variable <emphasis role="strong">SER_LIBS</emphasis>. See
+			<emphasis role="strong">Module Development</emphasis> section for more details on this topic.
+		</para>
+	</section>
+</chapter>

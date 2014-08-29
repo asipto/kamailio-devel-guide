@@ -1,9 +1,7 @@
 <chapter id="c15timer">
 	<title>Timer</title>
 	<para>
-		&openser; provides an internal timer that ticks every 100 milliseconds. The step can be
-		changed at compile time in the config.h file, its called UTIMER_TICK. It offers developer
-		an API to:
+		&kamailio; provides internal timers with millisecond precision. It offers developer API to:
 	</para>
 	<itemizedlist>
 		<listitem>
@@ -13,7 +11,7 @@
 		</listitem>
 		<listitem>
 			<para>
-				register functions to run every 100ms or interval of multiple 100ms
+				register functions to run every millisecond or interval of multiple milliseconds
 			</para>
 		</listitem>
 		<listitem>
@@ -37,7 +35,6 @@
 typedef unsigned long long utime_t;
 
 typedef void (timer_function)(unsigned int ticks, void* param);
-typedef void (utimer_function)(utime_t uticks, void* param);
 ...
 		</programlisting>
 		<para>
@@ -47,11 +44,6 @@ typedef void (utimer_function)(utime_t uticks, void* param);
 			<listitem>
 				<para>
 					ticks - number of second ticks elapsed at the moment of running the function
-				</para>
-			</listitem>
-			<listitem>
-				<para>
-					uticks - number of 100mili-second ticks elapsed at the moment of running the function
 				</para>
 			</listitem>
 			<listitem>
@@ -92,40 +84,11 @@ int register_timer(timer_function f, void* param, unsigned int interval);
 			</listitem>
 		</itemizedlist>
 		<para>
-			Register a function to be executed by millisecond-based timer:
-		</para>
-		<programlisting  format="linespecific">
-...
-int register_utimer(utimer_function f, void* param, unsigned int interval);
-...
-		</programlisting>
-		<para>
-			Parameters:
-		</para>
-		<itemizedlist>
-			<listitem>
-				<para>
-					f - callback function
-				</para>
-			</listitem>
-			<listitem>
-				<para>
-					param - parameter to callback function
-				</para>
-			</listitem>
-			<listitem>
-				<para>
-					interval - interval to execute the callback function
-				</para>
-			</listitem>
-		</itemizedlist>
-		<para>
 			Register a function to start a new timer process:
 		</para>
 		<programlisting  format="linespecific">
 ...
-int register_timer_process(timer_function f,void* param, unsigned int interval,
-		unsigned int flags);
+int register_timer_process(timer_function f, void* param, unsigned int interval);
 ...
 		</programlisting>
 		<para>
@@ -147,21 +110,16 @@ int register_timer_process(timer_function f,void* param, unsigned int interval,
 					interval - interval to execute the callback function
 				</para>
 			</listitem>
-			<listitem>
-				<para>
-					flags - flags describing the timer process
-				</para>
-			</listitem>
 		</itemizedlist>
 		<para>
-			There are two functions that return the number of ticks elapsed since &openser; started,
-			one for second-based timer and the other for millisecond-based timer.
+			There are two functions that return the number of ticks elapsed since &kamailio; started,
+			one returning time in seconds and the other one returning the number of internal ticks.
 		</para>
 		<programlisting  format="linespecific">
 ...
 unsigned int get_ticks(void);
 
-utime_t get_uticks(void);
+utime_t get_ticks_raw(void);
 ...
 		</programlisting>
 	</section>
@@ -194,6 +152,10 @@ register_timer(m_clean_silo, 0, ms_check_time);
 		<programlisting  format="linespecific">
 ...
 <![CDATA[
+/**
+ * - cleaning up the messages that got reply
+ * - delete expired messages from database
+ */
 void m_clean_silo(unsigned int ticks, void *param)
 {
 	msg_list_el mle = NULL, p;
@@ -219,7 +181,7 @@ void m_clean_silo(unsigned int ticks, void *param)
 #endif
 
 			db_keys[n] = &sc_mid;
-			db_vals[n].type = DB_INT;
+			db_vals[n].type = DB1_INT;
 			db_vals[n].nul = 0;
 			db_vals[n].val.int_val = p->msgid;
 			LM_DBG("cleaning sent message [%d]\n", p->msgid);
@@ -259,7 +221,7 @@ void m_clean_silo(unsigned int ticks, void *param)
 	{
 		LM_DBG("cleaning expired messages\n");
 		db_keys[0] = &sc_exp_time;
-		db_vals[0].type = DB_INT;
+		db_vals[0].type = DB1_INT;
 		db_vals[0].nul = 0;
 		db_vals[0].val.int_val = (int)time(NULL);
 		if (msilo_dbf.delete(db_con, db_keys, db_ops, db_vals, 1) < 0) 
@@ -274,5 +236,58 @@ void m_clean_silo(unsigned int ticks, void *param)
 			messages that were stored for too long time in database and the recipient was not online
 			or not able to receive them.
 		</para>
+	</section>
+	<section id="c15dedicated_timer">
+		<title>Dedicated timer process</title>
+		<para>
+			Sometime might be better to have your own timer process, not to disturb the operations
+			done by other timer function - recommended when you are doing operation that may take a
+			while on timer basis.
+		</para>
+		<para>
+			You can create as many timer processes as you need - it takes two steps:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					in mod_init() tell to timer API how many processes you want to create
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					in child_init() for MAIN child, fork the timer processes with the callback function
+				</para>
+			</listitem>
+		</itemizedlist>
+		<programlisting  format="linespecific">
+...
+/**
+ * init module function
+ */
+static int mod_init(void)
+{
+	...
+	register_dummy_timers(1);
+	...
+}
+...
+/**
+ * init module children
+ */
+static int child_init(int rank)
+{
+	...
+	if (rank==PROC_MAIN)
+	{
+		if(fork_dummy_timer(PROC_TIMER, "MY MOD TIMER", 1 /*socks flag*/,
+				my_timer_callback, my_timer_param, 1 /*sec*/) &lt; 0) {
+			LM_ERR("failed to register timer routine as process\n");
+			return -1; /* error */
+		}
+	}
+	...
+}
+...
+		</programlisting>
 	</section>
 </chapter>

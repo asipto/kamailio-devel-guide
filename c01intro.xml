@@ -2,31 +2,53 @@
 	<title>Introduction</title>
 
 	<section id="c01osss">
-		<title>&openser; SIP Server</title>
+		<title>&kamailio; SIP Server</title>
 		<para>
-			July 28, 2008, the project name changed from OPENSER to KAMAILIO.
-			In June 2005, &openser; was born as a
-			split from SIP Express Router project of FhG FOKUS Institute, Berlin, Germany.
+			In June 2005, &kamailio; was born as a
+			split from SIP Express Router (aka SER) project of FhG FOKUS Institute, Berlin, Germany.
 			The newly created project was aiming to create an open development environment to 
 			build robust and scalable open source SIP server.
+			Initial name was OpenSER, but due to trademark infringements claims, the project name changed
+			from OpenSER to Kamailio on July 28, 2008.
 		</para>
 		<para>
 			The website of the project is <ulink url="http://wwww.kamailio.org">http://www.kamailio.org</ulink>.
-			The source code is hosted on <ulink url="http://sourceforge.net">sourceforge.net</ulink> SVN
-			repository.
+			The source code up to version 1.5.x was hosted on
+			<ulink url="http://sourceforge.net">sourceforge.net</ulink> SVN repository. Starting with version 3.0.0,
+			the source code is hosted on <ulink url="http://sip-router.org">sip-router.org</ulink> GIT repository.
 		</para>
 		<para>
-			Today &openser; SIP Server is a reference implementation, featuring hundreds of VoIP services
+			In November 2008, the development teams of &kamailio; and SIP Express Router (SER) joined again
+			their efforts and started to work together to integrate the two SIP server applications. The integration
+			concluded with release of v3.0.0, which represents a single source code tree for both applications. In
+			other words, Kamailio and SER are the same application from source code point of view, the difference is
+			done by the name chosen to build the application and the modules loaded in the default configuration file.
+		</para>
+		<para>
+			The evolution in time of &kamailio; is presented in next figure.
+		</para>
+		<figure>
+		<title>&kamailio; History</title>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref="./obj/kamailio_history.png"/>
+			</imageobject>
+		</mediaobject>
+		</figure>
+
+		<para>
+			Today &kamailio; SIP Server is a reference implementation, featuring hundreds of VoIP services
 			world wide, being developed by people around the world. It is included in official distributions
 			of several Linux and BSD flavors.
 		</para>
 		<para>
-			The number of registered developers and packagers exceeded 25. The level of contributions and the 
-			amount of contributors has an important impact on the evolution of the project. The book tries
-			to ease the understanding of &openser; from a developer point of view, giving the kick start
-			knowledge, it does not intend to be a cookbook. Efforts to improve the documentation in the 
-			sources is undertaken and make it <emphasis role="strong">doxygen</emphasis> compliant, making
-			a good developer documentation out of there.
+			The number of registered developers and packagers exceeded 90 since the start of the project in 2001.
+			During the last year, over 30 registered developers contributed code to project.
+			The level of contributions and the amount of contributors has an important impact on the evolution
+			of the project. The book tries to ease the understanding of &kamailio; from a developer point of view,
+			giving the kick start knowledge, it does not intend to be a cookbook. Efforts to improve the
+			documentation in the sources is undertaken and make it <emphasis role="strong">doxygen</emphasis>
+			compliant, making a good developer documentation out of there.
 		</para>
 	</section>
 
@@ -34,32 +56,38 @@
 		<title>About the authors</title>
 		<para>
 			<emphasis role="bold">Daniel-Constantin Mierla</emphasis> is one of the co-founders of
-			&openser; SIP Server project. He is involved in VoIP and SIP since beginning of 2002,
-			at FhG FOKUS Institute, Berlin, Germany, being involved as core developer in the
+			&kamailio; SIP Server project. He is involved in VoIP and SIP since beginning of 2002,
+			at FhG FOKUS Institute, Berlin, Germany, being core developer in the
 			SIP Express Router project. Currently he is employed by
-			<ulink url="http://www.asipto.com">ASIPTO</ulink>, an &openser;-focused
-			company. Daniel is an active OPENSER developer and member of management board.
+			<ulink url="http://www.asipto.com">ASIPTO</ulink>, a &kamailio;-focused
+			company. Daniel is an active &kamailio; developer, member of management board, leading
+			the project.
 		</para>
 		<para>
-			<emphasis role="bold">Elena-Ramona Modroiu</emphasis> is one of the co-founder of 
-			&openser; SIP Server project. She got involved in VoIP and SIP while working at her
-			graduation thesis within SIP Express Router project at FhG FOKUS Institute. She completed
-			studies at Polytechnic University of Valencia and Siemens Germany, working now at
+			<emphasis role="bold">Elena-Ramona Modroiu</emphasis> is one of the co-founders of 
+			&kamailio; SIP Server project. She got involved in VoIP and SIP while working at her
+			graduation thesis within SIP Express Router (SER) project at FhG FOKUS Institute. She
+			completed studies at Polytechnic University of Valencia and Siemens Germany, working now at
 			<ulink url="http://www.asipto.com">ASIPTO</ulink>,
-			being an active developer and member of management board of &openser;.
+			being an active developer and member of management board of &kamailio;.
 		</para>
 		<para>
-			The two authored many online tutorials about &openser; that include <emphasis>&openser;
-				Core Cookbook</emphasis>, <emphasis>&openser; Transformations</emphasis>,
-			<emphasis>&openser; Pseudo-variables</emphasis>, <emphasis>&openser; and Asterisk Integration</emphasis>,
-			<emphasis>&openser; and FreeRADIUS</emphasis>.
+			The two authored many online tutorials about &kamailio;, among them: <emphasis>&kamailio;
+				Core Cookbook</emphasis>, <emphasis>&kamailio; Transformations Cookbook</emphasis>,
+			<emphasis>&kamailio; Pseudo-Variables Cookbook</emphasis>,
+			<emphasis>&kamailio; and Asterisk Integration</emphasis>,
+			<emphasis>&kamailio; and FreeSWITCH Integration</emphasis>,
+			<emphasis>SIP Routing in Lua with &kamailio;</emphasis>,
+			<emphasis>Secure VoIP with &kamailio;</emphasis>,
+			<emphasis>IPv4 - IPv6 VoIP bridging with &kamailio;</emphasis>,
+			<emphasis>&kamailio; and FreeRADIUS</emphasis>.
 		</para>
 	</section>
 
 	<section id="c01important">
 		<title>Important</title>
 		<para>
-			This document is focusing only to &openser; specific API, has no intention to teach
+			This document is focusing only to &kamailio; specific API, has no intention to teach
 			C programing for Linux and Networking. You, as a reader, should have already the
 			basic knowledge of C programming.
 		</para>
@@ -68,18 +96,18 @@
 		</para>
 		<para>
 			There are many references to parts of code in the source tree. You must be familiar
-			with the directory structure of &openser;. It is not our intention to explain how
-			something was implemented, but how to use existing code to extend &openser; easily.
+			with the directory structure of &kamailio;. It is not our intention to explain how
+			something was implemented, but how to use existing code to extend &kamailio; easily.
 		</para>
 		<para>
 			The source code remains the best reference for developers. In the last time, the comments
-			around the important functions in &openser; have been improved and converted to
+			around the important functions in &kamailio; have been improved and converted to
 			<emphasis role="strong">doxygen</emphasis> format. You should double-check the source
 			code if the prototype of the functions presented in this document are still valid.
 		</para>
 		<para>
 			Daily updated <emphasis role="strong">doxygen</emphasis> documentation is available at
-			<ulink url="http://devel.kamailio.net/doxygen/">http://devel.openser.org/doxygen/</ulink>.
+			<ulink url="http://devel.kamailio.net/doxygen/">http://devel.kamailio.org/doxygen/</ulink>.
 		</para>
 	</section>
 </chapter>

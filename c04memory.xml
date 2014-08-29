@@ -1,7 +1,7 @@
 <chapter id="c04memory">
 	<title>Memory Manager</title>
 	<para>
-		As &openser; is a multi-process application, the usage of shared memory is
+		As &kamailio; is a multi-process application, the usage of shared memory is
 		required in many scenarios. The memory manager tries to simplify the work with
 		shared and private memory, providing a very simple programming interface.
 		The internal design took in consideration speed optimizations, something
@@ -13,7 +13,7 @@
 		configuration parsing, that includes the setting of module parameters.
 	</para>
 	<para>
-		When the own memory manager cannot be used, &openser; falls back to the SysV shared
+		When the own memory manager cannot be used, &kamailio; falls back to the SysV shared
 		memory system.
 	</para>
 	<para>
@@ -21,10 +21,10 @@
 		then it allocates parts inside the chunk as visible in the following figure.
 	</para>
 	<figure>
-		<title>&openser; Memory Management</title>
+		<title>&kamailio; Memory Management</title>
 		<mediaobject>
 			<imageobject>
-				<imagedata fileref="./obj/openser_memory.png"/>
+				<imagedata fileref="./obj/kamailio_memory.png"/>
 			</imageobject>
 		</mediaobject>
 	</figure>
@@ -35,11 +35,11 @@
 		<para>
 			This type of memory is specific per process, no synchronization is needed to
 			access structures allocated in it. It should be used for variables that do not
-			need to be visible in other &openser; processes or for temporary operations.
+			need to be visible in other &kamailio; processes or for temporary operations.
 		</para>
 		<para>
 			To store static values in private memory and have it in all processes without
-			the need to synchronize for accessing it, you must create it before &openser;
+			the need to synchronize for accessing it, you must create it before &kamailio;
 			forks.
 		</para>
 		<para>
@@ -109,7 +109,7 @@ if(p==NULL)
 	LM_ERR("cannot allocate pkg memory\n");
 	exit;
 }
-strcpy(p, "openser");
+strcpy(p, "kamailio");
 LM_DBG("string value at %p is [%s]\n", p, p);
 pkg_free(p);
 ...
@@ -121,7 +121,7 @@ pkg_free(p);
 			<para>
 				Realloc a previously allocated memory chunk. It copies the content of the old
 				memory chunk to the new one. If the space after the old chunk is free and large enough
-				to scale to the new size, the &openser; memory manager will set the size of the old chunk
+				to scale to the new size, the &kamailio; memory manager will set the size of the old chunk
 				to the new size, marking properly the memory zone, in this way, the copy operation
 				is skipped.
 			</para>
@@ -152,7 +152,7 @@ if(p==NULL)
 	LM_ERR("cannot allocate pkg memory\n");
 	exit;
 }
-strcpy(p, "openser");
+strcpy(p, "kamailio");
 LM_DBG("string value at %p is [%s]\n", p, p);
 p = (char*)pkg_realloc(p, 16*sizeof(char));
 if(p==NULL)
@@ -172,19 +172,19 @@ pkg_free(p);
 	<section id="c04shared_memory">
 		<title>Shared Memory</title>
 		<para>
-			The data stored in shared memory is visible in all &openser; modules. It is the space
+			The data stored in shared memory is visible in all &kamailio; modules. It is the space
 			where user location records are stored, the TM structures for stateful processing, routing
 			rules for the dispatcher or the lcr module, and many more.
 		</para>
 		<para>
 			The shared memory is initialized after the config file is parsed, because it need to know
-			the user and group &openser; is running under, for the case when the memory manger uses SysV
+			the user and group &kamailio; is running under, for the case when the memory manger uses SysV
 			operations.
 		</para>
 		<para>
 			To use shared memory functions in your C code you need to include the file:
 			<emphasis role="strong">mem/shm_mem.h</emphasis>. When accessing shared memory data, you
-			need to make sure that you don't have a race between different &openser; processes, 
+			need to make sure that you don't have a race between different &kamailio; processes, 
 			for example protect the access via a lock.
 		</para>
 		<section id="c04shm_malloc">
@@ -251,7 +251,7 @@ if(p==NULL)
 	LM_ERR("cannot allocate shm memory\n");
 	exit;
 }
-strcpy(p, "openser");
+strcpy(p, "kamailio");
 LM_DBG("string value at %p is [%s]\n", p, p);
 shm_free(p);
 ...
@@ -291,7 +291,7 @@ if(p==NULL)
 	LM_ERR("cannot allocate shm memory\n");
 	exit;
 }
-strcpy(p, "openser");
+strcpy(p, "kamailio");
 LM_DBG("string value at %p is [%s]\n", p, p);
 p = (char*)shm_realloc(p, 16*sizeof(char));
 if(p==NULL)
@@ -319,45 +319,122 @@ shm_free(p);
 					memory leak - allocating memory at runtime and don't free it when no longer needing. It
 					results in <emphasis role="strong">out of memory</emphasis> messages. Note that such
 					messages might be because of a too small size of the memory for the traffic, data or number
-					of subscribers that &openser; has to handle.
+					of subscribers that &kamailio; has to handle -- you can increase shared memory using -m
+					command line option and private memory using -M command line option.
 				</para>
 			</listitem>
 			<listitem>
 				<para>
 					memory overwriting - writing more than was allocated for that structure. It results in
-					an <emphasis role="strong">segmentation fault</emphasis>, crashing &openser;.
+					an <emphasis role="strong">segmentation fault</emphasis>, crashing &kamailio;.
 				</para>
 			</listitem>
 		</itemizedlist>
 		<para>
-			&openser; has an internal debugger for memory - it is able to show the chunks allocated
+			&kamailio; has an internal debugger for memory - it is able to show the chunks allocated
 			in private or shared memory and the file and line from where it was allocated. In
 			debugging mode it prints all calls for allocations and freeing memory.
 		</para>
 		<para>
-			To enable the memory debugger you have to recompile &openser;. Before that you have to edit the
-			file <emphasis role="strong">Makefile.defs</emphasis> and remove the define
-			<emphasis role="strong">F_MALLOC</emphasis> (<emphasis role="strong">-DF_MALLOC</emphasis>)
-			and add the define <emphasis role="strong">DBG_QM_MALLOC</emphasis>
-			(<emphasis role="strong">-DDBG_QM_MALLOC</emphasis>).
+			To enable the memory debugger you have to recompile &kamailio; with MEMDBG=1 option to
+			make tool.
 		</para>
+			<example id="c04p_memdbg">
+				<title>Building with memory debugging</title>
+<programlisting  format="linespecific">
+...
+make cfg FLAVOUR=kamailio MEMDBG=1 ...
+make all
+...
+				</programlisting>
+			</example>
+
 		<para>
 			Once compiled and installed with memory debugging you have to set <emphasis role="strong">memlog</emphasis>
 			parameter to a value lower than <emphasis role="strong">debug</emphasis> in configuration file. You can
-			start &openser; and try to reproduce the errors again. Once memory leak errors are printed you can either
-			send a <emphasis role="strong">signal USR1</emphasis> to the process that printed the messages
-			or stop &openser;. You get in the syslog file the status of the memory. If you see memory allocation
+			start &kamailio; and try to reproduce the errors again. Once memory leak errors are printed you can either
+			send a <emphasis role="strong">RPC command</emphasis> to the process that printed the messages
+			or stop &kamailio;. You get in the syslog file the status of the memory. If you see memory allocation
 			done from the same place in the sources, many times, at runtime, it is a memory leak. If not, increase
 			the memory size to fit your load needs and run again -- if you don't get the memory leak errors it was
-			the case of insufficient memory allocated for &openser;.
+			the case of insufficient memory allocated for &kamailio;.
 		</para>
+		<para>
+			For sending the RPC command, you have to load ctl and cfg_rpc modules, then use sercmd tool:
+		</para>
+			<example id="c04p_memlog_dump">
+				<title>Dumping memory usage</title>
+<programlisting  format="linespecific">
+...
+sercmd cfg.set_now_int core mem_dump_pkg [pid]
+...
+sercmd cfg.set_now_int core mem_dump_shm [pid]
+...
+				</programlisting>
+			</example>
+		<para>
+			Monitoring used memory can be done also via RPC commands:
+		</para>
+			<example id="c04p_mem_monitoring">
+				<title>Memory monitoring</title>
+<programlisting  format="linespecific">
+...
+sercmd> core.shmmem
+{
+	total: 33554432
+	free: 30817888
+	used: 2512248
+	real_used: 2736544
+	max_used: 2736544
+	fragments: 1
+}
+...
+sercmd> pkg.stats
+{
+	entry: 0
+	pid: 60090
+	rank: 0
+	used: 217280
+	free: 3674296
+	real_used: 520008
+}
+{
+	entry: 1
+	pid: 60091
+	rank: 1
+	used: 225160
+	free: 3666320
+	real_used: 527984
+}
+...
+				</programlisting>
+			</example>
+		<para>
+			It is possible to walk through the list of PKG fragments with gdb. For example, printing
+			used fragment in the range 2000 to 10000:
+		</para>
+		<programlisting  format="linespecific">
+...
+set $i=0
+set $a = mem_block-&gt;first_frag
+while($i&lt;10000)
+  if($i&gt;2000)
+    if($a-&gt;u.is_free==0)
+      p *$a
+    end
+  end
+  set $a = ((struct qm_frag*)((char*)($a)+sizeof(struct qm_frag)+((struct qm_frag*)$a)-&gt;size+sizeof(struct qm_frag_end)))
+  set $i = $i + 1
+end
+...
+		</programlisting>
 		<para>
 			For memory overwriting a core should be generated. If yes, you can investigate it with
 			<emphasis role="strong">gdb</emphasis>.
 		</para>
 		<programlisting  format="linespecific">
 ...
-# gdb /path/to/openser corefile
+# gdb /path/to/kamailio corefile
 ...
 		</programlisting>
 		<para>

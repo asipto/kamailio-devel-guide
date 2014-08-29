@@ -12,6 +12,11 @@
 		Apart of these, one can add new routing blocks, keywords or init and runtime instructions.
 	</para>
 	<para>
+		Starting with release series 3.0, configuration file language has support for preprocessor
+		directives. They provide an easy way to define tokens to values or enable/disable parts of
+		configuration file.
+	</para>
+	<para>
 		The config file include two main categories of statements:
 	</para>
 	<itemizedlist>
@@ -25,7 +30,7 @@
 		<listitem>
 			<para>
 				<emphasis role="strong">runtime statements</emphasis> - this category includes the actions
-				executed many times, after &openser; initialization. These statements are grouped in route
+				executed many times, after &kamailio; initialization. These statements are grouped in route
 				blocks, there being different route types that get executed for certain events.
 			</para>
 			<itemizedlist>
@@ -69,7 +74,7 @@
 	<section id="c08add_parameters">
 		<title>Adding a core parameter</title>
 		<para>
-			Some of the core parameters correspond to global variables in &openser; sources. Others induce
+			Some of the core parameters correspond to global variables in &kamailio; sources. Others induce
 			actions to be taken during statup.
 		</para>
 		<para>
@@ -81,7 +86,7 @@
 			First is the declaration of the variable in the C code. The <emphasis role="strong">log_name</emphasis>
 			is defined in <emphasis role="strong">main.c</emphasis> and initialized to
 			<emphasis role="strong">0</emphasis> (when set to <emphasis role="strong">o</emphasis>,
-			it is printed the &openser; name (including path) in the syslog).
+			it is printed the &kamailio; name (including path) in the syslog).
 		</para>
 <programlisting  format="linespecific">
 ...
@@ -117,7 +122,7 @@ assign_stm: ...
 		</para>
 		<programlisting  format="linespecific">
 ...
-log_name = "openser123"
+log_name = "kamailio123"
 ...
 		</programlisting>
 		<para>
@@ -129,7 +134,7 @@ log_name = "openser123"
 	<section id="c08add_functions">
 		<title>Adding a core function</title>
 		<para>
-			To introduce new functions in &openser; core that are exported to the configuration file
+			To introduce new functions in &kamailio; core that are exported to the configuration file
 			the grammar have to be extended (<emphasis role="strong">bison</emphasis> and
 			<emphasis role="strong">flex</emphasis> files), the interpreter must be enhanced to be
 			able to run the new actions.
@@ -140,26 +145,31 @@ log_name = "openser123"
 		</para>
 <programlisting  format="linespecific">
 ...
-typedef struct action_elem_ {
-	int type;             /* type of the element */
+typedef struct {
+	action_param_type type;
 	union {
-		long number;      /* element is a long number */
-		char* string;     /* element is a null-terminated string */
-		void* data;       /* element is pointer to a custom type data */
-		str s;            /* element is str value */
-		pv_spec_t* item;  /* element is a pseudo-variable */
+		long number;
+		char* string;
+		struct _str str;
+		void* data;
+		avp_spec_t* attr;
+		select_t* select;
 	} u;
-} action_elem_t, *action_elem_p;
+} action_u_t;
 
-/* increase MAX_ACTION_ELEMS to support more module function parameters
-   if you change this define, you need also to change the assignment in
-   the action.c file */
-#define MAX_ACTION_ELEMS	7
+/* maximum internal array/params
+ * for module function calls val[0] and val[1] store a pointer to the
+ * function and the number of params, the rest are the function params 
+ */
+#define MAX_ACTIONS (2+6)
+
 struct action{
-	int type;                             /* type of action: forward, drop, log, send ...*/
-	action_elem_t elem[MAX_ACTION_ELEMS]; /* the elements of this action: parameters, etc. */
-	int line;                             /* line in cofig file where the action is used */
-	struct action* next;                  /* next action in config file */
+	int cline;
+	char *cfile;
+	enum action_type type;  /* forward, drop, log, send ...*/
+	int count;
+	struct action* next;
+	action_u_t val[MAX_ACTIONS];
 };
 ...
 		</programlisting>
@@ -197,16 +207,30 @@ SETFLAG			"setflag"
 				Assign a token ID and extend the <emphasis role="strong">bison</emphasis> grammar.
 			</para>
 			<programlisting  format="linespecific">
+<![CDATA[
 ...
 %token SETFLAG
 ...
 cmd:	...
 
-		| SETFLAG LPAREN NUMBER RPAREN {mk_action2($$, SETFLAG_T, NUMBER_ST, 0,
-					(void *)$3, 0 ); }
-		| SETFLAG error { $$=0; yyerror("missing '(' or ')'?"); }
+	| SETFLAG LPAREN NUMBER RPAREN	{
+							if (check_flag($3)==-1)
+								yyerror("bad flag value");
+							$$=mk_action(SETFLAG_T, 1, NUMBER_ST,
+													(void*)$3);
+							set_cfg_pos($$);
+									}
+	| SETFLAG LPAREN flag_name RPAREN	{
+							i_tmp=get_flag_no($3, strlen($3));
+							if (i_tmp<0) yyerror("flag not declared");
+							$$=mk_action(SETFLAG_T, 1, NUMBER_ST,
+										(void*)(long)i_tmp);
+							set_cfg_pos($$);
+									}
+	| SETFLAG error			{ $$=0; yyerror("missing '(' or ')'?"); }
 
 ...
+]]>
 			</programlisting>
 			<para>
 				First grammar specification says that <emphasis role="strong">setflag(...)</emphasis>
@@ -225,11 +249,24 @@ cmd:	...
 				<emphasis role="strong"></emphasis>
 			</para>
 			<programlisting  format="linespecific">
+<![CDATA[
 ...
-case SETFLAG_T:
-	ret = setflag( msg, a->elem[0].u.number );
-	break;
+		case SETFLAG_T:
+			if (a->val[0].type!=NUMBER_ST) {
+				LOG(L_CRIT, "BUG: do_action: bad setflag() type %d\n",
+					a->val[0].type );
+				ret=E_BUG;
+				goto error;
+			}
+			if (!flag_in_range( a->val[0].u.number )) {
+				ret=E_CFG;
+				goto error;
+			}
+			setflag( msg, a->val[0].u.number );
+			ret=1;
+			break;
 ...
+]]>
 			</programlisting>
 			<para>
 				The C function <emphasis role="strong">setflag(...)</emphasis> is defined and implemented
@@ -247,12 +284,16 @@ int setflag( struct sip_msg* msg, flag_t flag ) {
 ...
 			</programlisting>
 			<para>
-				We are not done yet. &openser; does a checking of the actions tree after all configuration
+				We are not done yet. &kamailio; does a checking of the actions tree after all configuration
 				file was loaded. It does sanity checks and optimization for run time. For our case, it does
 				a double-check that the parameter is a number and it is in the range of
 				<emphasis role="strong">0...31</emphasis> to fit in the bits size of an integer value. See
 				function <emphasis role="strong">fix_actions(...)</emphasis> in
 				<emphasis role="strong">route.c</emphasis>.
+			</para>
+			<para>
+				Next example is given just to show how such fixup can look like, it is no longer used for
+				flag operations functions.
 			</para>
 			<programlisting  format="linespecific">
 ...
@@ -290,7 +331,7 @@ int setflag( struct sip_msg* msg, flag_t flag ) {
 			</para>
 			<para>
 				Don't forget to add documentation in
-				<emphasis role="strong">OpenSER Core Cookbook</emphasis>.
+				<emphasis role="strong">&kamailio; Core Cookbook</emphasis>.
 			</para>
 		</section>
 	</section>

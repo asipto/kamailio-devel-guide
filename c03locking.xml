@@ -1,14 +1,14 @@
 <chapter id="c03locks">
 	<title>Locking system</title>
 	<para>
-		&openser; provides a custom locking system which has a simple interface for development.
+		&kamailio; provides a custom locking system which has a simple interface for development.
 		Its root element is a mutex semaphore, that can be set (locked) or unset (unlocked). The rest
 		of synchronization mechanisms available in SysV and POSIX not being needed.
 	</para>
 	<para>
 		The locks can be used as simple variables or lock sets (array of simple locks). To improve
 		the speed, behind the locks is, by default, machine-specific code. If the architecture of the
-		machine is unknown, &openser; will use SysV semaphores.
+		machine is unknown, &kamailio; will use SysV semaphores.
 	</para>
 	<section id="c03asml">
 		<title>Simple Locks API</title>
@@ -29,7 +29,7 @@
 			<title>gen_lock_t</title>
 			<para>
 				It is the type to define a lock variable. It must be allocated in shared memory, to be
-				available across &openser; processes.
+				available across &kamailio; processes.
 			</para>
 			<example id="c03ex_gen_lock_t">
 				<title>Defining a lock</title>
@@ -73,6 +73,27 @@ if(lock==NULL)
 {
 	LM_ERR("cannot allocate the lock\n");
 	exit;
+}
+...
+				</programlisting>
+			</example>
+			<para>
+			Lock allocation can be skipped if the lock is already in shared memory
+			-- BUT be sure the lock content IS in shared memory.
+			</para>
+			<example id="c03ex_lock_alloc_shm">
+				<title>Example of lock in shared memory</title>
+<programlisting  format="linespecific">
+...
+struct s {
+    int a;
+    gen_lock_t lock;
+} *x;
+
+x = shm_malloc(sizeof struct s); /* we allocate it in the shared memory */
+if (lock_init(&amp;x->lock)==0){
+    /* error initializing the lock */
+    ...
 }
 ...
 				</programlisting>
@@ -249,6 +270,58 @@ lock_dealloc(lock);
 				</programlisting>
 			</example>
 		</section>
+		<section id="c03lock_try">
+			<title>lock_try(...)</title>
+			<para>
+				Try to perform set operation on a lock. If the lock is already set, the function
+				returns -1, otherwise sets the lock and returns 0. This is a non-blocking lock_get().
+			</para>
+			<example id="c03p_lock_try">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+int lock_try(gen_lock_t* lock);
+...
+				</programlisting>
+			</example>
+			<para>
+				The parameter must be initialized with <emphasis role="strong">lock_init(...)</emphasis>
+				before calling this function.
+			</para>
+			<example id="c03ex_lock_try">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_t *lock;
+lock = lock_alloc();
+if(lock==NULL)
+{
+	LM_ERR("cannot allocate the lock\n");
+	exit;
+}
+if(lock_init(lock)==NULL)
+{
+	LM_ERR("cannot init the lock\n");
+	lock_dealloc(lock);
+	exit;
+}
+/* make use of lock */
+if(lock_try(lock)==0) {
+   /* under lock protection */
+   ...
+} else {
+   /* NO lock protection */
+   ...
+}
+...
+lock_destroy(lock);
+lock_dealloc(lock);
+...
+				</programlisting>
+			</example>
+		</section>
 		<section id="c03lock_release">
 			<title>lock_release(...)</title>
 			<para>
@@ -321,7 +394,7 @@ lock_dealloc(lock);
 			<title>gen_lock_set_t</title>
 			<para>
 				It is the type to define a lock set variable. It must be allocated in shared memory, to be
-				available across &openser; processes.
+				available across &kamailio; processes.
 			</para>
 			<example id="c03ex_gen_lock_set_t">
 				<title>Defining a lock</title>
@@ -548,6 +621,61 @@ lock_set_dealloc(set);
 				</programlisting>
 			</example>
 		</section>
+		<section id="c03lock_set_try">
+			<title>lock_set_get(...)</title>
+			<para>
+				Try to set (block) a lock in the lock set. You should call this function after the lock set
+				has been initialized. If the lock is already set, the function returns -1, otherwise it sets
+				the lock and returns 0. This is a non-blocking lock_set_get().
+			</para>
+			<example id="c03p_lock_set_try">
+				<title>Prototype</title>
+<programlisting  format="linespecific">
+...
+int lock_set_try(gen_lock_set_t* set, int i);
+...
+				</programlisting>
+			</example>
+			<para>
+				First parameter is the lock set. The second is the index withing the set of the lock to
+				be set. First lock in set has index 0. The index parameter must be between
+				<emphasis role="strong">0</emphasis> and <emphasis role="strong">n-1</emphasis> (see
+				<emphasis role="strong">lock_set_alloc(...)</emphasis>.
+			</para>
+			<example id="c03ex_lock_set_try">
+				<title>Example of usage</title>
+<programlisting  format="linespecific">
+...
+#include "locking.h"
+...
+gen_lock_set_t *set;
+set = lock_set_alloc(16);
+if(set==NULL)
+{
+	LM_ERR("cannot allocate the lock set\n");
+	exit;
+}
+if(lock_set_init(set)==NULL)
+{
+	LM_ERR("cannot initialize the lock set'n");
+	lock_set_dealloc(set);
+	exit;
+}
+/* make usage of lock set */
+if(lock_set_try(set, 8)==0) {
+    /* under lock protection */
+    ...
+} else {
+    /* NO lock protection */
+    ...
+}
+...
+lock_set_destroy(set);
+lock_set_dealloc(set);
+...
+				</programlisting>
+			</example>
+		</section>
 		<section id="c03lock_set_release">
 			<title>lock_set_release(...)</title>
 			<para>
@@ -602,7 +730,7 @@ lock_set_dealloc(set);
 	<section id="c03troubleshooting">
 		<title>Troubleshooting</title>
 		<para>
-			A clear sign of issues with the locking is that one or more &openser; processes eat lot of CPU.
+			A clear sign of issues with the locking is that one or more &kamailio; processes eat lot of CPU.
 			If the traffic load does not justify such behavior and no more SIP messages are processed, the only
 			solution is to troubleshoot and fix the locking error. The problem is that a lock is set but never
 			unset. A typical case is when returning due to an error and forgetting to release a previously lock
@@ -610,12 +738,13 @@ lock_set_dealloc(set);
 		</para>
 		<para>
 			To troubleshoot a solution is to use <emphasis role="strong">gdb</emphasis>, attach to the process
-			that eats lot of CPU and get the backtrace. You need to get the PID of that &openser; process -
+			that eats lot of CPU and get the backtrace. You need to get the PID of that &kamailio; process -
 			<emphasis role="strong">top</emphasis> or <emphasis role="strong">ps</emphasis> tools can be used.
 		</para>
 		<programlisting  format="linespecific">
 ...
-# gdb /path/to/openser PID
+# gdb /path/to/kamailio PID
+# gdb&gt; bt
 ...
 		</programlisting>
 		<para>

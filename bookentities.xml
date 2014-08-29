@@ -4,24 +4,24 @@
 
 <!ENTITY company "ASIPTO">
 <!ENTITY companyweb "<ulink url='http://www.asipto.com'>www.asipto.com</ulink>">
-<!ENTITY openser "KAMAILIO (OPENSER)">
-<!ENTITY opensername "KAMAILIO (OPENSER)">
+<!ENTITY kamailio "Kamailio">
+<!ENTITY kamailioname "Kamailio">
 
-<!ENTITY openserhome "http://www.kamailio.org">
-<!ENTITY openserbugs "http://www.kamailio.org">
-<!ENTITY openserhelp "http://lists.kamailio.org/cgi-bin/mailman/listinfo/team">
-<!ENTITY openserusers "http://lists.kamailio.org/cgi-bin/mailman/listinfo/users">
-<!ENTITY openserdev "http://lists.kamailio.org/cgi-bin/mailman/listinfo/devel">
+<!ENTITY kamailiohome "http://www.kamailio.org">
+<!ENTITY kamailiobugs "http://www.kamailio.org">
+<!ENTITY kamailiohelp "http://lists.kamailio.org/cgi-bin/mailman/listinfo/team">
+<!ENTITY kamailiousers "http://lists.kamailio.org/cgi-bin/mailman/listinfo/users">
+<!ENTITY kamailiodev "http://lists.kamailio.org/cgi-bin/mailman/listinfo/devel">
 
-<!ENTITY openserhomelink "<ulink url='&openserhome;'>&openserhome;</ulink>">
-<!ENTITY openserbugslink "<ulink url='&openserbugs;'>&openserbugs;</ulink>">
-<!ENTITY openserhelplink "<ulink url='&openserhelp;'>&openserhelp;</ulink>">
-<!ENTITY openseruserslink "<ulink url='&openserusers;'>&openserusers;</ulink>">
-<!ENTITY openserdevlink "<ulink url='&openserdev;'>&openserdev;</ulink>">
+<!ENTITY kamailiohomelink "<ulink url='&kamailiohome;'>&kamailiohome;</ulink>">
+<!ENTITY kamailiobugslink "<ulink url='&kamailiobugs;'>&kamailiobugs;</ulink>">
+<!ENTITY kamailiohelplink "<ulink url='&kamailiohelp;'>&kamailiohelp;</ulink>">
+<!ENTITY kamailiouserslink "<ulink url='&kamailiousers;'>&kamailiousers;</ulink>">
+<!ENTITY kamailiodevlink "<ulink url='&kamailiodev;'>&kamailiodev;</ulink>">
 
-<!ENTITY openserhelpmail "<email>devel@lists.kamailio.org</email>">
-<!ENTITY openserusersmail "<email>users@kamailio.org</email>">
-<!ENTITY openserdevmail "<email>devel@kamailio.org</email>">
+<!ENTITY kamailiohelpmail "<email>sr-dev@lists.sip-router.org</email>">
+<!ENTITY kamailiousersmail "<email>sr-users@lists.sip-router.org</email>">
+<!ENTITY kamailiodevmail "<email>sr-dev@lists.sip-router.org</email>">
 
 <!-- Often used acronyms -->
 

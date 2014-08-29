@@ -5,10 +5,10 @@
 		<ulink url="http://www.asipto.com">www.asipto.com</ulink>.
 	</para>
 	<para>
-		The tutorial is going to be included in the &openser; repository, if
+		The tutorial is going to be included in the &kamailio; repository, if
 		you want to post messages with improvements or mistakes you can write emails 
-		to &lt;<emphasis role="strong">devel [at] lists [dot] kamailio [dot] org</emphasis>&gt;
+		to &lt;<emphasis role="strong">sr-dev [at] lists [dot] sip-router [dot] org</emphasis>&gt;
 		or use the documentation tracker from
-		<ulink url="http://sourceforge.net/tracker/?atid=782960&amp;group_id=139143">sourceforge.net</ulink>.
+		<ulink url="http://sip-router.org/tracker">sip-router.org</ulink>.
 	</para>
 </chapter>

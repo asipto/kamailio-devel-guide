@@ -13,26 +13,27 @@
 <!ENTITY c07transport SYSTEM "c07transport.xml">
 <!ENTITY c08config SYSTEM "c08config.xml">
 <!ENTITY c09database SYSTEM "c09database.xml">
-<!ENTITY c10mi SYSTEM "c10mi.xml">
+<!ENTITY c10rpc SYSTEM "c10rpc.xml">
 <!ENTITY c11pv SYSTEM "c11pv.xml">
 <!ENTITY c12transformations SYSTEM "c12transformations.xml">
 <!ENTITY c13statistics SYSTEM "c13statistics.xml">
 <!ENTITY c14datalump SYSTEM "c14datalump.xml">
 <!ENTITY c15timer SYSTEM "c15timer.xml">
 <!ENTITY c16moduledev SYSTEM "c16moduledev.xml">
-<!ENTITY c17licensing SYSTEM "c17licensing.xml">
-<!ENTITY c18references SYSTEM "c18references.xml">
-<!ENTITY c19contact SYSTEM "c19contact.xml">
+<!ENTITY c17libdev SYSTEM "c17libdev.xml">
+<!ENTITY c18licensing SYSTEM "c18licensing.xml">
+<!ENTITY c19references SYSTEM "c19references.xml">
+<!ENTITY c20contact SYSTEM "c20contact.xml">
 
 ]>
 
 <book>
     <bookinfo>
-	<title>KAMAILIO (OPENSER) Devel Guide</title>
-	<titleabbrev>KAMAILIO (OPENSER) Devel Guide</titleabbrev>
+	<title>Kamailio SIP Server v3.2.0 Development Guide</title>
+	<titleabbrev>Kamailio SIP Server v3.2.0 Development Guide</titleabbrev>
 	<abstract>
 		<para>
-			This book documents the internal architecture of KAMAILIO (OPENSER) SIP
+			This book documents the internal architecture of &kamailio; SIP
 			Server, providing the details useful to develop extensions in the
 			core or as a module.
 		</para>
@@ -43,10 +44,11 @@
 			and module interface.
 		</para>
 		<para>
-			Examples, API and the architecture are based on current development
-			version of &openser; - <emphasis role="strong">1.4.0</emphasis> -
-			at April 2, 2008. Some may change until 1.4.0 is released as
-			stable. The document will be timely updated accordingly, check for
+			Examples, API and the architecture are based on current stable
+			version of &kamailio; - <emphasis role="strong">3.2.0</emphasis> -
+			at October 30, 2011. It is also valid for development version
+			- <emphasis role="strong">3.3.0</emphasis> - at this date. 
+			The document will be timely updated accordingly, check for
 			updates at
 			<ulink url="http://www.asipto.com">www.asipto.com</ulink> or
 			<ulink url="http://www.kamailio.org">www.kamailio.org</ulink>.
@@ -66,7 +68,7 @@
 		<email><ulink url="http://www.asipto.com">http://www.asipto.com</ulink></email>
 		<address>
 			<affiliation>
-			<orgname>ASIPTO SRL</orgname>
+			<orgname>ASIPTO</orgname>
 			</affiliation>
 			<otheraddr>
 			<ulink url="http://www.asipto.com">http://www.asipto.com</ulink>
@@ -79,7 +81,7 @@
 		<email><ulink url="http://www.asipto.com">http://www.asipto.com</ulink></email>
 		<address>
 			<affiliation>
-			<orgname>ASIPTO SRL</orgname>
+			<orgname>ASIPTO</orgname>
 			</affiliation>
 			<otheraddr>
 			<ulink url="http://www.asipto.com">http://www.asipto.com</ulink>
@@ -88,8 +90,8 @@
 	    </author>
 	</authorgroup>
 	<copyright>
-	    <year>2008</year>
-		<holder><ulink url="http://www.asipto.com">ASIPTO SRL</ulink></holder>
+	    <year>2011</year>
+		<holder><ulink url="http://www.asipto.com">ASIPTO</ulink></holder>
 	</copyright>
     </bookinfo>
     <toc></toc>
@@ -103,15 +105,16 @@
 	&c07transport;
 	&c08config;
 	&c09database;
-	&c10mi;
+	&c10rpc;
 	&c11pv;
 	&c12transformations;
 	&c13statistics;
 	&c14datalump;
 	&c15timer;
 	&c16moduledev;
-	&c17licensing;
-	&c18references;
-	&c19contact;
+	&c17libdev;
+	&c18licensing;
+	&c19references;
+	&c20contact;
 
 </book>

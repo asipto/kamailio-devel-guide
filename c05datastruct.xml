@@ -2,7 +2,7 @@
 	<title>Data structures</title>
 	<para>
 		In this chapter we focus on most used data structures inside
-		&openser; sources. Most of them relate to SIP message structure.
+		&kamailio; sources. Most of them relate to SIP message structure.
 		Other important data structures are explained in the chapters
 		detailing specific components or functionalities -- for example,
 		see <emphasis role="strong">Database API</emphasis> or
@@ -12,7 +12,7 @@
 		<title>str</title>
 		<para>
 			&sip; is a text-based protocol, therefore lot of operations
-			resume to text manipulation. &openser; uses references in the
+			resume to text manipulation. &kamailio; uses references in the
 			&sip; message body most of the time, doing it via an anchor
 			pointer and the length. For that it uses the
 			<emphasis role="strong">str</emphasis> structure.
@@ -41,7 +41,7 @@ typedef struct _str str;
 #include "str.h"
 ...
 str s;
-s.s = "openser";
+s.s = "kamailio";
 s.len = strlen(s.s);
 LM_DBG("the string is [%.*s]\n", s.len, s.s);
 ...

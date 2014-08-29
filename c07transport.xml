@@ -14,6 +14,11 @@
 		extensions, you don't have to care about reading/writing from/to network.
 	</para>
 	<para>
+		TLS implementation is a module, residing inside modules/tls. It reuses the TCP layer from
+		the core for the management of the connection, while the code in modules/tls takes care
+		of TLS negotiation and encryption.
+	</para>
+	<para>
 		If you want to investigate the implementation of transport layers, you can start with:
 	</para>
 	<itemizedlist>
@@ -29,7 +34,7 @@
 		</listitem>
 		<listitem>
 			<para>
-				<emphasis role="strong">tls/*.{c,h}</emphasis> for TLS
+				<emphasis role="strong">modules/tls/*.{c,h}</emphasis> for TLS
 			</para>
 		</listitem>
 		<listitem>
@@ -41,13 +46,17 @@
 	<section id="c07dns">
 		<title>DNS Implementation</title>
 		<para>
-			&openser; follows the requirements specified in RFC3263 for server and service location.
+			&kamailio; follows the requirements specified in RFC3263 for server and service location.
 			That includes support for <emphasis role="strong">NAPTR</emphasis> and
 			<emphasis role="strong">SRV</emphasis> records as well.
 		</para>
 		<para>
 			To investigate the implementation related to DNS, start with files
 			<emphasis role="strong">resolve.{c,h}</emphasis>.
+		</para>
+		<para>
+			There is an internal DNS cache which is necessary for doing DNS-based load
+			balancing and failover. It can be disable via core parameters in the configuration file.
 		</para>
 	</section>
 </chapter>

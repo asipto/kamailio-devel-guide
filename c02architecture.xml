@@ -1,34 +1,56 @@
 <chapter id="c02arch">
-	<title>&openser; Architecture</title>
+	<title>&kamailio; Architecture</title>
 	<para>
-		&openser; has a modular architecture. As a big picture, there are two main categories:
+		&kamailio; has a modular architecture. As a big picture, there are two main categories:
 	</para>
 	<itemizedlist>
 		<listitem>
 			<para>
 				<emphasis>the core</emphasis> - it is the component that provides the low-level
-				functionalities for &openser;
+				functionalities for &kamailio;.
+			</para>
+			<para>
+				Starting with version 3.0.0, &kamailio; core includes so called
+				<emphasis>internal libraries</emphasis>. They collect code shared by several modules
+				but which does not have a general purpose to be part of main core.
 			</para>
 		</listitem>
 		<listitem>
 			<para>
 				<emphasis>the modules</emphasis> - are the components that provides the most
-				of the functionalities that make &openser; powerful in real world deployments.
+				of the functionalities that make &kamailio; powerful in real world deployments.
 			</para>
 		</listitem>
 	</itemizedlist>
-
+	<para>
+		The architecture for &kamailio; v1.5.x (or older) is shown in the next figure.
+	</para>
 	<figure>
-		<title>&openser; Architecture</title>
+		<title>&kamailio; 1.x Architecture</title>
 		<mediaobject>
 			<imageobject>
-				<imagedata fileref="./obj/openser_design.png"/>
+				<imagedata fileref="./obj/kamailio_architecture_old.png"/>
+			</imageobject>
+		</mediaobject>
+	</figure>
+	<para>
+		The architecture for &kamailio; v3.0.x (or newer) was refactored, permitting 
+		to have code shared by several modules stored in internal libraries. Some of
+		the core components in v1.x being relocated as an internal library. The new
+		architecture for v3.0.x compared with the one from v1.x is shown in the next figure.
+	</para>
+	<figure>
+		<title>&kamailio; 3.x Architecture</title>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref="./obj/kamailio_architecture_new.png"/>
 			</imageobject>
 		</mediaobject>
 	</figure>
 
+
 	<section>
-		<title>&openser; Core</title>
+		<title>&kamailio; Core</title>
 		<para>
 			The core includes:
 		</para>
@@ -60,16 +82,6 @@
 			</listitem>
 			<listitem>
 				<para>
-					database abstraction layer (DB API)
-				</para>
-			</listitem>
-			<listitem>
-				<para>
-					management interface (MI) API
-				</para>
-			</listitem>
-			<listitem>
-				<para>
 					stateless forwarding
 				</para>
 			</listitem>
@@ -80,7 +92,7 @@
 			</listitem>
 			<listitem>
 				<para>
-					statistics engine
+					RPC control interface API
 				</para>
 			</listitem>
 			<listitem>
@@ -89,17 +101,44 @@
 				</para>
 			</listitem>
 		</itemizedlist>
-	</section>
-
-	<section>
-		<title>&openser; Modules</title>
 		<para>
-			With the modules you can get functionalities such as:
+			The internal libraries include:
 		</para>
 		<itemizedlist>
 			<listitem>
 				<para>
-					user location management
+					some components from old Kamailio v1.5.x core
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					database abstraction layers (DB API v1 and v2)
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					management interface (MI) API
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					statistics engine
+				</para>
+			</listitem>
+		</itemizedlist>
+
+	</section>
+
+	<section>
+		<title>&kamailio; Modules</title>
+		<para>
+			There are over 150 modules in the repository at this moment. By loading modules,
+			you can get functionalities such as:
+		</para>
+		<itemizedlist>
+			<listitem>
+				<para>
+					registrar and user location management
 				</para>
 			</listitem>
 			<listitem>
@@ -119,7 +158,12 @@
 			</listitem>
 			<listitem>
 				<para>
-					stateful processing
+					stateful processing - SIP transaction management
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					SIP dialogs tracking - active calls management
 				</para>
 			</listitem>
 			<listitem>
@@ -129,37 +173,47 @@
 			</listitem>
 			<listitem>
 				<para>
-					RADIUS support
+					RADIUS and LDAP support
 				</para>
 			</listitem>
 			<listitem>
 				<para>
-					database connectors
+					SQL and no-SQL database connectors
 				</para>
 			</listitem>
 			<listitem>
 				<para>
-					MI transports
+					MI and RPC transports
 				</para>
 			</listitem>
 			<listitem>
 				<para>
-					CPL interpreter
+					Enum, GeoIP API and CPL interpreter
 				</para>
 			</listitem>
 			<listitem>
 				<para>
-					sms and xmpp gateways
+					topology hiding and NAT traversal
 				</para>
 			</listitem>
 			<listitem>
 				<para>
-					NAT traversal
+					load balancing and least cost routing
 				</para>
 			</listitem>
 			<listitem>
 				<para>
-					Perl and Java SIP Servlet extensions
+					asynchronous SIP request processing
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					interactive configuration file debugger
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					Lua, Perl, Python and Java SIP Servlet extensions
 				</para>
 			</listitem>
 		</itemizedlist>
@@ -167,15 +221,15 @@
 	<section id="c02message_processing">
 		<title>SIP Message Processing</title>
 		<para>
-			The execution of &openser; configuration file is triggered when receiving a SIP message from the network. The processing flow is different for
-			a SIP request or a SIP reply.
+			The execution of &kamailio; configuration file is triggered when receiving a SIP message from
+			the network. The processing flow is different for a SIP request or a SIP reply.
 		</para>
 
 		<figure>
 		<title>SIP Request Processing</title>
 		<mediaobject>
 			<imageobject>
-				<imagedata fileref="./obj/openser_request_processing.png"/>
+				<imagedata fileref="./obj/kamailio_request_processing.png"/>
 			</imageobject>
 		</mediaobject>
 		</figure>
@@ -183,14 +237,14 @@
 		<title>SIP Reply Processing</title>
 		<mediaobject>
 			<imageobject>
-				<imagedata fileref="./obj/openser_reply_processing.png"/>
+				<imagedata fileref="./obj/kamailio_reply_processing.png"/>
 			</imageobject>
 		</mediaobject>
 		</figure>
 
 		<para>
-			The document contains a chapter dedicated to <emphasis role="strong">Configuration File</emphasis> that explains its structure and the types
-			of routing blocks.
+			The document contains a chapter dedicated to <emphasis role="strong">Configuration File</emphasis> that
+			explains its structure and the types of routing blocks.
 		</para>
 	</section>
 </chapter>

@@ -40,8 +40,9 @@
 	<para>
 		Behind each transformation it is a function that does value (pv_value_t) manipulation. It has as input
 		such a value and as output another value, stored over the input value. The transformation are
-		implemented only in the &openser; core, data structures and functions are in files
-		<emphasis role="strong">transformations.{c,h}</emphasis>.
+		implemented mainly in &kamailio; modules, data structures and API are in file
+		<emphasis role="strong">pvar.h</emphasis>. Many transformations are effectively implemented in
+		<emphasis role="strong">modules_k/pv/pv_trans.{c,h}</emphasis>.
 	</para>
 	<section id="c12naming_format">
 		<title>Naming Format</title>
@@ -61,7 +62,7 @@
 		<itemizedlist>
 			<listitem>
 				<para>
-					classname - string identifying the class of transformation. So far there are:
+					classname - string identifying the class of transformation. For example:
 				</para>
 				<itemizedlist>
 					<listitem>
@@ -114,25 +115,25 @@
 		</para>
 <programlisting  format="linespecific">
 ...
-typedef struct tr_param_ {
+typedef struct _tr_param {
 	int type;        /* type of the parameter value */
 	union {
 		int n;       /* the integer value of the parameter */
 		str s;       /* the string value of the parameter */
 		void *data;  /* pseudo-variable spec of the parameter */
 	} v;
-	struct tr_param_ *next;  /* link to next parameter */
+	struct _tr_param *next; /* link to next parameter */
 } tr_param_t, *tr_param_p;
 
-typedef int (*tr_func_t) (struct sip_msg *msg, tr_param_t *param, int subtype, pv_value_t *value);
+typedef int (*tr_func_t) (struct sip_msg *, tr_param_t*, int, pv_value_t*);
 
-typedef struct trans_ {
-	str name;              /* full name of the transformation */
-	int type;              /* the id of the transformation class */
-	int subtype;           /* the id of the transformation inner name */
-	tr_func_t trf;         /* the function to be executed when applying the transformation */
-	tr_param_t *params;    /* the parameters for this transformation */
-	struct trans_ *next;   /* link to next transformation to be applied to same pseudo-variable */
+typedef struct _trans {
+	str name;               /* full name of the transformation */
+	int type;               /* the id of the transformation class */
+	int subtype;            /* the id of the transformation inner name */
+	tr_func_t trf;          /* the function to be executed when applying the transformation */
+	tr_param_t *params;     /* the parameters for this transformation */
+	struct _trans *next;    /* link to next transformation to be applied to same pseudo-variable */
 } trans_t, *trans_p;
 ...
 		</programlisting>
@@ -170,43 +171,21 @@ typedef struct trans_ {
 	<section id="c12adding_transformation">
 		<title>Adding a Transformation</title>
 		<para>
-			The core transformation framework assigns for each transformation class a function to parse the innername
-			and the parameters, plus a function to execute when the transformation need to be applied. To extend
-			an existing transformation class, you have to extend the two functions of that transformation. You have
-			to assign a subtype for your new transformation.
-		</para>
-		<para>
-			To add a new class, you have to extend the framework to recognize the class name, and implement the two
-			functions for it.
+			The transformation framework keeps for each transformation class a function to parse the innername
+			and the parameters, plus a function to execute when the transformation need to be applied. To add
+			new transformations, you have to implement the two functions.
 		</para>
 		<para>
 			Exemplifying with transformation <emphasis role="strong">s.len</emphasis> - it returns the length
 			of the string value of a pseudo-variable. The type <emphasis role="strong">TR_STRING</emphasis>
 			and subtype <emphasis role="strong">TR_S_LEN</emphasis> are added in file
-			<emphasis role="strong">transformations.h</emphasis>.
+			<emphasis role="strong">modules_k/pv/pv_trans.h</emphasis> - these are internal IDs used for
+			runtime optimizations.
 		</para>
 		<para>
-			The function <emphasis role="strong">parse_transformation(...)</emphasis> in file
-			<emphasis role="strong">transformations.c</emphasis> is extended to recognize the class
-			<emphasis role="strong">s</emphasis>.
-		</para>
-		<programlisting  format="linespecific">
-...
-	if(tclass.len==1 &amp;&amp; (*tclass.s=='s' || *tclass.s=='S'))
-	{
-		t->type = TR_STRING;
-		t->trf = tr_eval_string;
-		s.s = p; s.len = in-&gt;s + in-&gt;len - p;
-		p0 = tr_parse_string(&amp;s, t);
-		if(p0==NULL)
-			goto error;
-		p = p0;
-	}
-...
-		</programlisting>
-		<para>
-			It calls function <emphasis role="strong">tr_parse_string(...)</emphasis> to parse the rest of
-			the <emphasis role="strong">string</emphasis> transformation. In this function, if the inner name
+			The function <emphasis role="strong">tr_parse_string()</emphasis> in file
+			<emphasis role="strong">modules_k/pv/pv_trans.c</emphasis> is implementing the parser of the class
+			<emphasis role="strong">s</emphasis>. In this function, if the inner name
 			is <emphasis role="strong">len</emphasis> it sets the subtype accordingly.
 		</para>
 		<programlisting  format="linespecific">
@@ -220,7 +199,9 @@ typedef struct trans_ {
 		</programlisting>
 		<para>
 			The transformation parser is now extended. Next is the interpreter, the function
-			<emphasis role="strong">tr_eval_str(...)</emphasis>.
+			<emphasis role="strong">tr_eval_str(...)</emphasis> - the evaluation function will be
+			associated to string transformation by the parser function
+			<emphasis role="strong">tr_parse_string()</emphasis>.
 		</para>
 		<programlisting  format="linespecific">
 ...
@@ -238,7 +219,42 @@ typedef struct trans_ {
 		</programlisting>
 		<para>
 			The content of the pv_value_t variable is replaced with the length of the string representation
-			of its initial value.
+			of its initial value. An example of usage is shown next - get the length of request URI:
 		</para>
+		<programlisting  format="linespecific">
+...
+$var(x) = $(ru{s.len});
+...
+		</programlisting>
+		<para>
+			To make the transformations available to the core API, you have to register them. You can do it
+			via <emphasis role="strong">mod_register(...)</emphasis> function. Note that this function is
+			executed when the module is loaded, making possible to use the transformation in module
+			parameters and configuration file operations. See
+			<emphasis role="strong">modules_k/pv/pv.c</emphasis>:
+		</para>
+		<programlisting  format="linespecific">
+...
+static tr_export_t mod_trans[] = {
+	{ {"s", sizeof("s")-1}, /* string class */
+		tr_parse_string },
+	{ {"nameaddr", sizeof("nameaddr")-1}, /* nameaddr class */
+		tr_parse_nameaddr },
+	{ {"uri", sizeof("uri")-1}, /* uri class */
+		tr_parse_uri },
+	{ {"param", sizeof("param")-1}, /* param class */
+		tr_parse_paramlist },
+	{ {"tobody", sizeof("tobody")-1}, /* param class */
+		tr_parse_tobody },
+
+	{ { 0, 0 }, 0 }
+};
+...
+int mod_register(char *path, int *dlflags, void *p1, void *p2)
+{
+	return register_trans_mod(path, mod_trans);
+}
+...
+		</programlisting>
 	</section>
 </chapter>

@@ -1,7 +1,7 @@
 <chapter id="c09database">
 	<title>Database API</title>
 	<para>
-		Internally, &openser; uses a reduced set of SQL operations to access
+		Internally, &kamailio; uses a reduced set of SQL operations to access
 		the records on the storage system. This allowed to write DB driver modules
 		for non-SQL storage systems, such as <emphasis role="strong">db_text</emphasis>
 		-- a tiny DB engine using text files.
@@ -13,11 +13,18 @@
 		to link to the interface functions.
 	</para>
 	<para>
-		The DB interface is implemented in the <emphasis role="strong">db</emphasis> directory. To
-		use it, one has to include the file <emphasis role="strong">db/db.h</emphasis>.
+		Starting with version 3.0.0, &kamailio; has two variants of database APIs, stored
+		as internal libraries, named <emphasis role="strong">srdb1</emphasis> and
+		<emphasis role="strong">srdb2</emphasis>. Most of &kamailio; modules are using
+		<emphasis role="strong">srdb1</emphasis>, thus for this document the focus will
+		be on how to use this option.
+	</para>
+	<para>
+		The DB1 interface is implemented in the <emphasis role="strong">lib/srdb1</emphasis> directory. To
+		use it, one has to include the file <emphasis role="strong">lib/srdb1/db.h</emphasis>.
 	</para>
 	<section id="c09apistructure">
-		<title>DB API Structure</title>
+		<title>DB1 API Structure</title>
 		<para>
 			It is the structure that gets filled when binding to a DB driver module. It links to
 			the interface functions implemented in the module.
@@ -27,21 +34,23 @@
 <programlisting  format="linespecific">
 ...
 typedef struct db_func {
-	unsigned int      cap;           /* Capability vector of the database transport */
-	db_use_table_f    use_table;     /* Specify table name */
-	db_init_f         init;          /* Initialize database connection */
-	db_close_f        close;         /* Close database connection */
-	db_query_f        query;         /* Query a table */
-	db_fetch_result_f fetch_result;  /* Fetch result */
-	db_raw_query_f    raw_query;     /* Raw query - SQL */
-	db_free_result_f  free_result;   /* Free a query result */
-	db_insert_f       insert;        /* Insert into table */
-	db_delete_f       delete;        /* Delete from table */ 
-	db_update_f       update;        /* Update table */
-	db_replace_f      replace;       /* Replace row in a table */
+	unsigned int      cap;            /* Capability vector of the database transport */
+	db_use_table_f    use_table;      /* Specify table name */
+	db_init_f         init;           /* Initialize database connection */
+	db_close_f        close;          /* Close database connection */
+	db_query_f        query;          /* query a table */
+	db_fetch_result_f fetch_result;   /* fetch result */
+	db_raw_query_f    raw_query;      /* Raw query - SQL */
+	db_free_result_f  free_result;    /* Free a query result */
+	db_insert_f       insert;         /* Insert into table */
+	db_delete_f       delete;         /* Delete from table */ 
+	db_update_f       update;         /* Update table */
+	db_replace_f      replace;        /* Replace row in a table */
 	db_last_inserted_id_f  last_inserted_id;  /* Retrieve the last inserted ID
 	                                            in a table */
 	db_insert_update_f insert_update; /* Insert into table, update on duplicate key */ 
+	db_insert_delayed_f insert_delayed;       /* Insert delayed into table */
+	db_affected_rows_f affected_rows; /* Numer of affected rows for last query */
 } db_func_t;
 ...
 			</programlisting>
@@ -54,27 +63,29 @@ typedef struct db_func {
 			module need <emphasis role="strong">select</emphasis>,
 			<emphasis role="strong">delete</emphasis> and
 			<emphasis role="strong">insert</emphasis> capabilities. The flags for capabilities
-			are enumerated in the next figure (located in <emphasis role="strong">db/db_cap.h</emphasis>).
+			are enumerated in the next figure (located in <emphasis role="strong">lib/srdb1/db_cap.h</emphasis>).
 		</para>
 <programlisting  format="linespecific">
 ...
 typedef enum db_cap {
-	DB_CAP_QUERY =     1 &lt;&lt; 0,  /* driver can perform queries */
-	DB_CAP_RAW_QUERY = 1 &lt;&lt; 1,  /* driver can perform raw queries */
-	DB_CAP_INSERT =    1 &lt;&lt; 2,  /* driver can insert data */
-	DB_CAP_DELETE =    1 &lt;&lt; 3,  /* driver can delete data */
-	DB_CAP_UPDATE =    1 &lt;&lt; 4,  /* driver can update data */
-	DB_CAP_REPLACE =   1 &lt;&lt; 5,  /* driver can replace (also known as INSERT OR UPDATE) data */
-	DB_CAP_FETCH   =   1 &lt;&lt; 6,  /* driver supports fetch result queries */
-	DB_CAP_LAST_INSERTED_ID = 1 &lt;&lt; 7,  /* driver can return the ID of the last insert operation */
- 	DB_CAP_INSERT_UPDATE = 1 &lt;&lt; 8 /* driver can insert data into database and update on duplicate */
+	DB_CAP_QUERY =     1 &lt;&lt; 0,  /* driver can perform queries                                     */
+	DB_CAP_RAW_QUERY = 1 &lt;&lt; 1,  /* driver can perform raw queries                                 */
+	DB_CAP_INSERT =    1 &lt;&lt; 2,  /* driver can insert data                                         */
+	DB_CAP_DELETE =    1 &lt;&lt; 3,  /* driver can delete data                                         */
+	DB_CAP_UPDATE =    1 &lt;&lt; 4,  /* driver can update data                                         */
+	DB_CAP_REPLACE =   1 &lt;&lt; 5,  /* driver can replace (also known as INSERT OR UPDATE) data       */
+	DB_CAP_FETCH   =   1 &lt;&lt; 6,  /* driver supports fetch result queries                           */
+	DB_CAP_LAST_INSERTED_ID = 1 &lt;&lt; 7,  /* driver can return the ID of the last insert operation   */
+	DB_CAP_INSERT_UPDATE = 1 &lt;&lt; 8,  /* driver can insert data into database, update on duplicate  */
+	DB_CAP_INSERT_DELAYED = 1 &lt;&lt; 9, /* driver can do insert delayed                               */
+	DB_CAP_AFFECTED_ROWS = 1 &lt;&lt; 10  /* driver can return number of rows affected by last query    */
 } db_cap_t;
 ...
 		</programlisting>
 	</section>
 	
 	<section id="c09dbapi_functions">
-		<title>DB API Functions</title>
+		<title>DB1 API Functions</title>
 		<para>
 		</para>
 		<section id="c09f_init">
@@ -86,7 +97,7 @@ typedef enum db_cap {
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef db_con_t* (*db_init_f) (const str* _url);
+typedef db1_con_t* (*db_init_f) (const str* _url);
 ...
 				</programlisting>
 			</example>
@@ -105,7 +116,7 @@ typedef db_con_t* (*db_init_f) (const str* _url);
 				</listitem>
 			</itemizedlist>
 			<para>
-				The function returns pointer to db_con_t* representing the connection structure or NULL
+				The function returns pointer to db1_con_t* representing the connection structure or NULL
 				in case of error.
 			</para>
 		</section>
@@ -121,7 +132,7 @@ typedef db_con_t* (*db_init_f) (const str* _url);
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef void (*db_close_f) (db_con_t* _h); 
+typedef void (*db_close_f) (db1_con_t* _h);
 ...
 				</programlisting>
 			</example>
@@ -131,7 +142,7 @@ typedef void (*db_close_f) (db_con_t* _h);
 			<itemizedlist>
 				<listitem>
 					<para>
-						<emphasis role="strong">_h</emphasis> - db_con_t structure representing the
+						<emphasis role="strong">_h</emphasis> - db1_con_t structure representing the
 						database connection.
 					</para>
 				</listitem>
@@ -151,7 +162,7 @@ typedef void (*db_close_f) (db_con_t* _h);
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_use_table_f)(db_con_t* _h, const str * _t);
+typedef int (*db_use_table_f)(db1_con_t* _h, const str * _t);
 ...
 				</programlisting>
 			</example>
@@ -186,9 +197,10 @@ typedef int (*db_use_table_f)(db_con_t* _h, const str * _t);
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_query_f) (const db_con_t* _h, const db_key_t* _k, const db_op_t* _op,
+typedef int (*db_query_f) (const db1_con_t* _h, const db_key_t* _k, const db_op_t* _op,
 				const db_val_t* _v, const db_key_t* _c, const int _n, const int _nc,
-				const db_key_t _o, db_res_t** _r);
+				const db_key_t _o, db1_res_t** _r);
+
 ...
 				</programlisting>
 			</example>
@@ -272,7 +284,8 @@ typedef int (*db_query_f) (const db_con_t* _h, const db_key_t* _k, const db_op_t
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_fetch_result_f) (const db_con_t* _h, db_res_t** _r, const int _n);
+typedef int (*db_fetch_result_f) (const db1_con_t* _h, db1_res_t** _r, const int _n);
+
 ...
 				</programlisting>
 			</example>
@@ -313,7 +326,8 @@ typedef int (*db_fetch_result_f) (const db_con_t* _h, db_res_t** _r, const int _
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_raw_query_f) (const db_con_t* _h, const str* _s, db_res_t** _r);
+typedef int (*db_raw_query_f) (const db1_con_t* _h, const str* _s, db1_res_t** _r);
+
 ...
 				</programlisting>
 			</example>
@@ -352,7 +366,7 @@ typedef int (*db_raw_query_f) (const db_con_t* _h, const str* _s, db_res_t** _r)
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_free_result_f) (db_con_t* _h, db_res_t* _r);
+typedef int (*db_free_result_f) (db1_con_t* _h, db1_res_t* _r);
 ...
 				</programlisting>
 			</example>
@@ -367,7 +381,7 @@ typedef int (*db_free_result_f) (db_con_t* _h, db_res_t* _r);
 				</listitem>
 				<listitem>
 					<para>
-						<emphasis role="strong">_r</emphasis> -  pointer to db_res_t structure to
+						<emphasis role="strong">_r</emphasis> -  pointer to db1_res_t structure to
 						destroy.
 					</para>
 				</listitem>
@@ -386,7 +400,7 @@ typedef int (*db_free_result_f) (db_con_t* _h, db_res_t* _r);
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_insert_f) (const db_con_t* _h, const db_key_t* _k,
+typedef int (*db_insert_f) (const db1_con_t* _h, const db_key_t* _k,
 				const db_val_t* _v, const int _n);
 ...
 				</programlisting>
@@ -432,7 +446,7 @@ typedef int (*db_insert_f) (const db_con_t* _h, const db_key_t* _k,
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_delete_f) (const db_con_t* _h, const db_key_t* _k, const db_op_t* _o,
+typedef int (*db_delete_f) (const db1_con_t* _h, const db_key_t* _k, const db_op_t* _o,
 				const db_val_t* _v, const int _n);
 ...
 				</programlisting>
@@ -485,7 +499,7 @@ typedef int (*db_delete_f) (const db_con_t* _h, const db_key_t* _k, const db_op_
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_update_f) (const db_con_t* _h, const db_key_t* _k, const db_op_t* _o,
+typedef int (*db_update_f) (const db1_con_t* _h, const db_key_t* _k, const db_op_t* _o,
 				const db_val_t* _v, const db_key_t* _uk, const db_val_t* _uv,
 				const int _n, const int _un);
 ...
@@ -555,7 +569,7 @@ typedef int (*db_update_f) (const db_con_t* _h, const db_key_t* _k, const db_op_
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_replace_f) (const db_con_t* handle, const db_key_t* keys,
+typedef int (*db_replace_f) (const db1_con_t* handle, const db_key_t* keys,
 				const db_val_t* vals, const int n);
 ...
 				</programlisting>
@@ -601,7 +615,7 @@ typedef int (*db_replace_f) (const db_con_t* handle, const db_key_t* keys,
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_last_inserted_id_f) (const db_con_t* _h);
+typedef int (*db_last_inserted_id_f) (const db1_con_t* _h);
 ...
 				</programlisting>
 			</example>
@@ -631,7 +645,7 @@ typedef int (*db_last_inserted_id_f) (const db_con_t* _h);
 				<title>Function type</title>
 <programlisting  format="linespecific">
 ...
-typedef int (*db_insert_update_f) (const db_con_t* _h, const db_key_t* _k,
+typedef int (*db_insert_update_f) (const db1_con_t* _h, const db_key_t* _k,
 				const db_val_t* _v, const int _n);
 ...
 				</programlisting>
@@ -668,8 +682,82 @@ typedef int (*db_insert_update_f) (const db_con_t* _h, const db_key_t* _k,
 			</para>
 		</section>
 
+		<section id="c09f_insert_delayed">
+			<title>Function insert_delayed(...)</title>
+			<para> 
+				Insert delayed a row into specified table - don't wait for confirmation from database
+				server.
+			</para>
+			<example id="c09t_insert_delayed">
+				<title>Function type</title>
+<programlisting  format="linespecific">
+...
+typedef int (*db_insert_delayed_f) (const db1_con_t* _h, const db_key_t* _k,
+				const db_val_t* _v, const int _n);
 
+...
+				</programlisting>
+			</example>
+			<para>
+				Parameters:
+			</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+						<emphasis role="strong">_h</emphasis> - database connection handle.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong">_k</emphasis> -   array of keys (column names).
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong">_v</emphasis> -   array of values for keys specified
+						in _k parameter.
+					</para>
+				</listitem>
+				<listitem>
+					<para>
+						<emphasis role="strong">_n</emphasis> -  number of keys-value pairs int _k 
+						and _v parameters.
+					</para>
+				</listitem>
+			</itemizedlist>
+			<para>
+				The function 0 if everything is OK, otherwise returns value negative value.
+			</para>
+		</section>
 
+		<section id="c09f_affected_rows">
+			<title>Function affected_rows(...)</title>
+			<para> 
+				 Retrieve the number of affected rows by last operation done to database.
+			</para>
+			<example id="c09t_affected_rows">
+				<title>Function type</title>
+<programlisting  format="linespecific">
+...
+typedef int (*db_affected_rows_f) (const db1_con_t* _h);
+...
+				</programlisting>
+			</example>
+			<para>
+				Parameters:
+			</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+						<emphasis role="strong">_h</emphasis> -  structure representing database
+						connection
+					</para>
+				</listitem>
+					</itemizedlist>
+			<para>
+				The function returns the number of affected rows by previous DB operation.
+			</para>
+		</section>
 
 	</section>
 	
@@ -706,6 +794,29 @@ typedef const char* db_op_t;
 ...
 				</programlisting>
 			</example>
+			<para>
+				Predefined operators are:
+			</para>
+			<example id="c09d_db_op_t_predefined">
+				<title>DB Expression Operators</title>
+				<programlisting  format="linespecific">
+...
+typedef const char* db_op_t;
+/** operator less than */
+#define OP_LT  "&lt;"
+/** operator greater than */
+#define OP_GT  "&gt;"
+/** operator equal */
+#define OP_EQ  "="
+/** operator less than equal */
+#define OP_LEQ "&lt;="
+/** operator greater than equal */
+#define OP_GEQ "&gt;="
+/** operator negation */
+#define OP_NEQ "!="
+...
+				</programlisting>
+			</example>
 		</section>	
 		<section id="c09t_db_type_t">
 			<title>Type db_type_t</title>
@@ -719,13 +830,14 @@ typedef const char* db_op_t;
 				<programlisting  format="linespecific">
 ...
 typedef enum {
-	DB_INT,        /* represents an 32 bit integer number      */
-	DB_DOUBLE,     /* represents a floating point number       */
-	DB_STRING,     /* represents a zero terminated const char* */
-	DB_STR,        /* represents a string of 'str' type        */
-	DB_DATETIME,   /* represents date and time                 */
-	DB_BLOB,       /* represents a large binary object         */
-	DB_BITMAP      /* an one-dimensional array of 32 flags     */
+	DB1_INT,        /* represents an 32 bit integer number      */
+	DB1_BIGINT,     /* represents an 64 bit integer number      */
+	DB1_DOUBLE,     /* represents a floating point number       */
+	DB1_STRING,     /* represents a zero terminated const char* */
+	DB1_STR,        /* represents a string of 'str' type        */
+	DB1_DATETIME,   /* represents date and time                 */
+	DB1_BLOB,       /* represents a large binary object         */
+	DB1_BITMAP      /* an one-dimensional array of 32 flags     */
 	} db_type_t;
 ...
 				</programlisting>
@@ -757,6 +869,7 @@ typedef struct {
 	/** Column value structure that holds the actual data in a union.  */
 	union {
 		int           int_val;    /* integer value              */
+		long long     ll_val;     /* long long value            */
 		double        double_val; /* double value               */
 		time_t        time_val;   /* unix time_t value          */
 		const char*   string_val; /* zero terminated string     */
@@ -764,26 +877,26 @@ typedef struct {
 		str           blob_val;   /* binary object data         */
 		unsigned int  bitmap_val; /* Bitmap data type           */
 	} val;
-	} db_val_t;
+} db_val_t;
 ...
 				</programlisting>
 			</example>
 		</section>	
 
-		<section id="c09t_db_con_t">
+		<section id="c09t_db1_con_t">
 			<title>Type db_con_t</title>
 			<para>
 				This structure represents a database connection, pointer to this structure
 				are used as a connection handle from modules uses the db API.
 			</para>
-			<example id="c09d_db_con_t">
+			<example id="c09d_db1_con_t">
 				<title>Definition</title>
 				<programlisting  format="linespecific">
 ...
 typedef struct {
 	const str* table;      /* Default table that should be used              */
 	unsigned long tail;    /* Variable length tail, database module specific */
-	} db_con_t;
+} db1_con_t;
 ...
 				</programlisting>
 			</example>
@@ -811,8 +924,8 @@ typedef struct db_row {
 		</section>
 
 
-		<section id="c09t_db_res_t">
-			<title>Type db_res_t</title>
+		<section id="c09t_db1_res_t">
+			<title>Type db1_res_t</title>
 			<para>
 				This type represents a result returned by db_query function (see below).
 				The result can consist of zero or more rows (see db_row_t description).
@@ -825,11 +938,11 @@ typedef struct db_row {
 				rows, each db_res_t object contains also an array of db_key_t objects. The
 				objects represent keys (names of columns). 
 			</para>
-			<example id="c09d_db_res_t">
+			<example id="c09d_db1_res_t">
 				<title>Definition</title>
 				<programlisting  format="linespecific">
 ...
-typedef struct db_res {
+typedef struct db1_res {
 	struct {
 		db_key_t* names;   /* Column names                    */
 		db_type_t* types;  /* Column types                    */
@@ -839,7 +952,7 @@ typedef struct db_res {
 	int n;                 /* Number of rows in current fetch */
 	int res_rows;          /* Number of total rows in query   */
 	int last_row;          /* Last row                        */
-	} db_res_t;
+	} db1_res_t;
 ...
 				</programlisting>
 			</example>
@@ -912,6 +1025,11 @@ typedef struct db_res {
 			</listitem>
 			<listitem>
 				<para>
+					VAL_BIGINT(val) - get/set the big integer value
+				</para>
+			</listitem>
+			<listitem>
+				<para>
 					VAL_STRING(val) - get/set the null-terminated string value
 				</para>
 			</listitem>
@@ -957,10 +1075,10 @@ create table test (
 ...
 <![CDATA[
 #include "../../dprint.h"
-#include "../../db/db.h"
+#include "../../lib/srdb1/db.h"
 
 db_func_t db_funcs;      /* Database API functions */
-db_con_t* db_handle=0;   /* Database connection handle */
+db1_con_t* db_handle=0;   /* Database connection handle */
 
 int db_example(char *db_url)
 {
@@ -971,7 +1089,7 @@ int db_example(char *db_url)
 	db_key_t db_keys[1];
 	db_val_t db_vals[1];
 	db_key_t db_cols[1];
-	db_res_t* db_res = NULL;
+	db1_res_t* db_res = NULL;
 
     /* Bind the database module */
 	if (db_bind_mod(&db_url, &db_funcs))

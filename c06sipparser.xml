@@ -1,7 +1,7 @@
 <chapter id="c06sipparser">
 	<title>SIP Parser</title>
 	<para>
-		&openser; includes its own implementation of SIP parser. It is known
+		&kamailio; includes its own implementation of SIP parser. It is known
 		as <emphasis role="strong">lazy</emphasis> or
 		<emphasis role="strong">incremental</emphasis> parser. That means
 		it parses until it founds the required elements or encounters ends
@@ -19,7 +19,7 @@
 		It does not parse entirely the parts of the SIP message. For most of
 		the SIP headers, it identifies the name and body, it does not parse
 		the content of header's body. It may happen that a header is malformed
-		and &openser; does not report any error as there was no request to
+		and &kamailio; does not report any error as there was no request to
 		parse that header body. However, most used headers are parsed entirely
 		by default. Such headers are top most Via, To, CSeq, Content-Lenght.
 	</para>
@@ -44,8 +44,8 @@
 		don't find it, second try is to use
 		<emphasis role="strong">ctags</emphasis> to locate a
 		<emphasis role="strong">parse_XYZ(...)</emphasis> function. If no
-		luck, then ask on &openser; development mainling list
-		<emphasis role="strong">devel@lists.openser.org</emphasis>. Final
+		luck, then ask on &kamailio; development mailing list
+		<emphasis role="strong">devel@lists.kamailio.org</emphasis>. Final
 		solution in case on negative answer is to implement it yourself. For
 		example, CSeq header parser is in
 		<emphasis role="strong">parser/parse_cseq.{c,h}</emphasis>.
@@ -69,9 +69,22 @@ int parse_uri(char *buf, int len, struct sip_uri* uri);
 		<para>
 		</para>
 		<example id="c06ex_parse_uri">
-			<title>Example of usage</title>
+			<title>Example of URI parser usage</title>
 <programlisting  format="linespecific">
 ...
+	char *uri;
+	struct sip_uri parsed_uri;
+
+	uri = "sip:test@mydomain.com";
+
+	if(parse_uri(uri, strlen(uri), &amp;parsed_uri)!=0)
+	{
+		LM_ERR("invalid uri [%s]\n", uri);
+	} else {
+		LM_DBG("uri user [%.*s], uri domain [%.*s]\n",
+			parsed_uri.user.len, parsed_uri.user.s,
+			parsed_uri.host.len, parsed_uri.host.s);
+	}
 ...
 			</programlisting>
 		</example>
@@ -80,7 +93,7 @@ int parse_uri(char *buf, int len, struct sip_uri* uri);
 		<title>parse_msg(...)</title>
 		<para>
 			A developer does not interfere too much with this function as it is called
-			automatically by &openser; when a SIP message is received from the network.
+			automatically by &kamailio; when a SIP message is received from the network.
 		</para>
 		<para>
 			You can use it if you load the content of SIP message from a file or database,
@@ -264,13 +277,16 @@ int get_msg_body(struct sip_msg *msg, str *body)
 		return -1;
 	}
 
+	body->len = msg->len - (body->s - msg->buf);
+
 	/* content-length (if present) must be already parsed */
 	if (!msg->content_length) 
 	{
 		LM_ERR("no Content-Length header found!\n");
 		return -1;
 	}
-	body->len = get_content_length( msg );
+	if(body->len != get_content_length( msg ))
+		LM_WARN("Content length header value different than body size\n");
 	return 0;
 }
 ...

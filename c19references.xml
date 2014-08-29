@@ -1,0 +1,95 @@
+<chapter id="c17references">
+	<title>References</title>
+	<para>
+	</para>
+	<itemizedlist>
+		<listitem>
+			<para>
+				&kamailio; Home Page - <ulink url="http://www.kamailio.org">
+					http://www.kamailio.org</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				ASIPTO Home Page - <ulink url="http://www.asipto.com">
+					http://www.asipto.com</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; Dokuwiki Page  - <ulink url="http://www.kamailio.org/wiki">
+					http://www.kamailio.org/wiki</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; Documentation Repository - 
+				<ulink url="http://www.kamailio.org/w/documentation/">
+				http://www.kamailio.org/w/documentation/</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; Modules Documentation - 
+				<ulink url="http://www.kamailio.net/docs/modules">
+				http://www.kamailio.net/docs/modules</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; Core CookBbook - 
+				<ulink url="http://www.kamailio.org/wiki/cookbooks/3.2.x/core">
+				http://www.kamailio.org/wiki/cookbooks/3.2.x/core</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; and Asterisk Realtime Integration - 
+				<ulink url="http://kb.asipto.com/asterisk:realtime:kamailio-3.1.x-asterisk-1.6.2-astdb">
+				http://kb.asipto.com/asterisk:realtime:kamailio-3.1.x-asterisk-1.6.2-astdb</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; and FreeSWITCH Integration - 
+				<ulink url="http://kb.asipto.com/freeswitch:kamailio-3.1.x-freeswitch-1.0.6d-sbc">
+				http://kb.asipto.com/freeswitch:kamailio-3.1.x-freeswitch-1.0.6d-sbc</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; GIT Repository (sub-project 'sip-router') - 
+				<ulink url="http://git.sip-router.org/">
+				http://git.sip-router.org/</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; Tracker - 
+				<ulink url="http://sip-router.org/tracker">
+				http://sip-router.org/tracker</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; Users Mailing List - <ulink url="http://lists.sip-router.org/cgi-bin/mailman/listinfo/sr-users">
+				http://lists.sip-router.org/cgi-bin/mailman/listinfo/sr-users</ulink>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+				&kamailio; Devel Mailing List - <ulink url="http://lists.sip-router.org/cgi-bin/mailman/listinfo/sr-dev">
+				http://lists.sip-router.org/cgi-bin/mailman/listinfo/sr-dev</ulink>
+			</para>
+		</listitem>
+
+
+		<listitem>
+			<para>
+				SIP RFC 3261 - <ulink url="http://www.ietf.org/rfc/rfc3261.txt">
+				http://www.ietf.org/rfc/rfc3261.txt</ulink>
+			</para>
+		</listitem>
+		
+	</itemizedlist>
+</chapter>

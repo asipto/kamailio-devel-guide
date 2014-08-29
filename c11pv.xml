@@ -106,7 +106,7 @@ $ru - reference to request URI
 $(ru) - same as above - this format can be used when the class name cannot be delimited. It must
         be used if the PV has index or transformations.
 $avp(s:test) - the AVP with the string name 'test'
-$avp(s:test[2]) - the third AVP with the string name 'test'
+$(avp(test)[2]) - the third AVP with the string name 'test'
 ...
 		</programlisting>
 	</section>
@@ -181,6 +181,7 @@ typedef struct _pv_name
 ...
 #define PV_NAME_INTSTR	0 // the name is constant, an integer or string
 #define PV_NAME_PVAR	1 // the name is dynamic, a pseudo-variable
+#define PV_NAME_OTHER	2 // the name is specific per implementation
 
 ...
 			</programlisting>
@@ -273,7 +274,7 @@ typedef struct _pv_spec {
 				e.g., only AVPs.
 			</para>
 			<para>
-				Such structure resides behind each occurence of a pseudo-variable in configuration file.
+				Such structure resides behind each occurrence of a pseudo-variable in configuration file.
 			</para>
 		</section>
 		<section id="c11pv_export_t">
@@ -346,9 +347,10 @@ typedef struct _pv_export {
 			a pseudo-variable with a inner name via module interface. <emphasis role="strong">$ru</emphasis>
 			(request URI) is taken as example. This pseudo-variable is read/write, so we have to implement
 			the <emphasis role="strong">get</emphasis> and <emphasis role="strong">set</emphasis>
-			functions. These are in file <emphasis role="strong">pvar.c</emphasis>.
+			functions. These are in file <emphasis role="strong">module_k/pv/pv_core.c</emphasis>.
 		</para>
 		<programlisting  format="linespecific">
+<![CDATA[
 ...
 static int pv_get_ruri(struct sip_msg *msg, pv_param_t *param,
 		pv_value_t *res)
@@ -356,57 +358,60 @@ static int pv_get_ruri(struct sip_msg *msg, pv_param_t *param,
 	if(msg==NULL || res==NULL)
 		return -1;
 
-	if(msg->first_line.type == SIP_REPLY)	/* REPLY doesnt have a ruri */
+	if(msg->first_line.type == SIP_REPLY)	/* REPLY doesn't have a ruri */
 		return pv_get_null(msg, param, res);
 
-	if(msg->parsed_uri_ok==0 /* R-URI not parsed*/ &amp;&amp; parse_sip_msg_uri(msg)&lt;0)
+	if(msg->parsed_uri_ok==0 /* R-URI not parsed*/ && parse_sip_msg_uri(msg)<0)
 	{
 		LM_ERR("failed to parse the R-URI\n");
 		return pv_get_null(msg, param, res);
 	}
 	
 	if (msg->new_uri.s!=NULL)
-		return pv_get_strval(msg, param, res, &amp;msg-&gt;new_uri);
-	return pv_get_strval(msg, param, res, &amp;msg-&gt;first_line.u.request.uri);
+		return pv_get_strval(msg, param, res, &msg->new_uri);
+	return pv_get_strval(msg, param, res, &msg->first_line.u.request.uri);
 }
 ...
 int pv_set_ruri(struct sip_msg* msg, pv_param_t *param,
 		int op, pv_value_t *val)
 {
 	struct action  act;
+	struct run_act_ctx h;
 	char backup;
 
-	if(msg==NULL || param==NULL || val==NULL)
+	if(msg==NULL || param==NULL || val==NULL || (val->flags&PV_VAL_NULL))
 	{
 		LM_ERR("bad parameters\n");
 		return -1;
 	}
 
-	if(!(val->flags&amp;PV_VAL_STR))
+	if(!(val->flags&PV_VAL_STR))
 	{
 		LM_ERR("str value required to set R-URI\n");
 		goto error;
 	}
 	
-	memset(&amp;act, 0, sizeof(act));
-	act.elem[0].type = STRING_ST;
-	act.elem[0].u.string = val-&gt;rs.s;
-	backup = val-&gt;rs.s[val-&gt;rs.len];
-	val-&gt;rs.s[val-&gt;rs.len] = '\0';
+	memset(&act, 0, sizeof(act));
+	act.val[0].type = STRING_ST;
+	act.val[0].u.string = val->rs.s;
+	backup = val->rs.s[val->rs.len];
+	val->rs.s[val->rs.len] = '\0';
 	act.type = SET_URI_T;
-	if (do_action(&amp;act, msg)&lt;0)
+	init_run_actions_ctx(&h);
+	if (do_action(&h, &act, msg)<0)
 	{
 		LM_ERR("do action failed\n");
-		val->rs.s[val-&gt;rs.len] = backup;
+		val->rs.s[val->rs.len] = backup;
 		goto error;
 	}
-	val->rs.s[val-&gt;rs.len] = backup;
+	val->rs.s[val->rs.len] = backup;
 
 	return 0;
 error:
 	return -1;
 }
 ...
+]]>
 		</programlisting>
 		<para>
 			The parameters to the functions are:
@@ -450,12 +455,13 @@ error:
 		</para>
 		<para>
 			The last step is to add the proper entry in the pseudo-variables table (see
-			<emphasis role="strong">pvar.c</emphasis>) -- remember that this is required only for
+			<emphasis role="strong">modules_k/pv/pv.c</emphasis>) -- remember that this is required only for
 			pseudo-variables included in core, not for the ones exported by modules.
 		</para>
 <programlisting  format="linespecific">
 ...
-static pv_export_t _pv_names_table[] = {
+static pv_export_t mod_pvs[] = {
+
 ...
 	{{"ruri", (sizeof("ruri")-1)}, /* */
 		PVT_RURI, pv_get_ruri, pv_set_ruri,

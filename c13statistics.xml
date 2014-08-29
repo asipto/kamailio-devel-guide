@@ -1,50 +1,48 @@
 <chapter id="c13statistics">
 	<title>Statistics</title>
 	<para>
-		These are integer numbers that collect information about &openser; internals. They are providing real-time
-		feedback about health and load of an &openser; instance. In fact, they are represented by an integer variable or
+		These are integer numbers that collect information about &kamailio; internals. They are providing real-time
+		feedback about health and load of an &kamailio; instance. In fact, they are represented by an integer variable or
 		a function that returns an integer.
 	</para>
 	<para>
 		The <emphasis role="strong">statistics engine</emphasis> is implemented in the files
-		<emphasis role="strong">statistics.{c,h}</emphasis>. If you want to extend it, you have to read and
+		<emphasis role="strong">lib/kcore/statistics..{c,h}</emphasis> - practically they are part
+		of internal library <emphasis role="strong">kcore</emphasis>. If you want to extend it, you have to read and
 		understand the code in those file. The purpose of this chapter is to teach how to add new statistic
 		variables.
 	</para>
 	<para>
-		You have to include the header file <emphasis role="strong">statistics.h</emphasis> and declare the
+		You have to include the header file <emphasis role="strong">lib/kcore/statistics.h</emphasis> and declare the
 		statistic variable. We exemplify with the statistic <emphasis role="strong">stored_messages</emphasis>
 		from module <emphasis role="strong">msilo</emphasis>. In the file
 		<emphasis role="strong">modules/msilo/msilo.c</emphasis>.
 	</para>
 	<programlisting  format="linespecific">
 ...		
-#include "../../statistics.h"
+#include "../../lib/kcore/statistics.h"
 
 stat_var* ms_stored_msgs;
 ...
 	</programlisting>
 	<para>
-		Next is to register the statistic to the engine, which is done there via module interface (to be explained
-		later, in a dedicated chapter).
+		Next is to register the statistic to the engine, which can done there via 
+		register_module_stats(...) function when you have an array of new statistics.
 	</para>
 	<programlisting  format="linespecific">
 ...
 stat_export_t msilo_stats[] = {
 	{"stored_messages" ,  0,  &amp;ms_stored_msgs  },
 ...
-/** module exports */
-struct module_exports exports= {
-	"msilo",    /* module id */
-...
-	msilo_stats,
-...	
-};
+	if (register_module_stats( exports.name, msilo_stats)!=0 ) {
+		LM_ERR("failed to register core statistics\n");
+		return -1;
+	}
 ...
 	</programlisting>
 	<para>
 		Alternative is to use the function <emphasis role="strong">register_stat(...)</emphasis> defined in
-		<emphasis role="strong">statistics.{c,h}</emphasis>.
+		<emphasis role="strong">lib/kcore/statistics.{c,h}</emphasis>.
 	</para>
 	<programlisting  format="linespecific">
 ...
