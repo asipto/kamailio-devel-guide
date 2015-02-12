@@ -107,7 +107,7 @@
 		</para>
 		<para>
 			Daily updated <emphasis role="strong">doxygen</emphasis> documentation is available at
-			<ulink url="http://devel.kamailio.net/doxygen/">http://devel.kamailio.org/doxygen/</ulink>.
+			<ulink url="http://rpm.kamailio.org/doxygen/sip-router/branch/master/index.html">http://rpm.kamailio.org/doxygen/sip-router/branch/master/index.html/</ulink>.
 		</para>
 	</section>
 </chapter>
